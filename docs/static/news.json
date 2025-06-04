@@ -9,7 +9,8 @@
         "filters": {
           "languages": [
             "en",
-            "de"
+            "de",
+            "it"
           ],
           "operatingSystems": [
             "linux",
@@ -19,14 +20,16 @@
       },
       "title": {
         "en": "This is an example news popup",
-        "de": "Dies ist ein Beispiel Nachrichten-Popup"
+        "de": "Dies ist ein Beispiel Nachrichten-Popup",
+        "it": "Questo \u00e8 un esempio di pop-up di notizie"
       },
       "banner": {
         "en": "https://news.musicpresence.app/static/news-assets/1/en/banner.png"
       },
       "content": {
         "en": "**This is some news example content.**\n\nTry not to embed images here,\njust write text and share some [links](https://musicpresence.app).",
-        "de": "**Dies ist beispielhafter Nachrichten-Inhalt.**\n\nAchte darauf keine Bilder zu verwenden,\nschreibe lediglich Text und teile eine paar [Links](https://musicpresence.app)."
+        "de": "**Dies ist beispielhafter Nachrichten-Inhalt.**\n\nAchte darauf keine Bilder zu verwenden,\nschreibe lediglich Text und teile eine paar [Links](https://musicpresence.app).",
+        "it": "**Questo \u00e8 un esempio di contenuto di notizie.**\n\nProva a non incorporare immagini qui,\nscrivi solo del testo e condividi dei [link](https://musicpresence.app)."
       }
     }
   ]
