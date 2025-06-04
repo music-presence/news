@@ -1,0 +1,432 @@
+import dateutil.parser
+from invoke import task
+from invoke.context import Context
+
+from dataclasses import dataclass
+from typing import List, Dict, Any, Iterator, Tuple, Optional, Callable
+import dataclasses
+import datetime
+import dateutil
+import functools
+import json
+import pathlib
+import os
+import sys
+import shutil
+import copy
+
+import jsonschema
+import jsonschema.validators
+import referencing
+
+
+NewsId = int
+LanguageCode = str
+JsonDict = Dict[str, Any]
+
+PWD = os.path.dirname(__file__)
+DIST_DIR = "docs"
+DIST_LOCATION = os.path.abspath(os.path.join(PWD, DIST_DIR))
+TRANSLATE_DIR = "translate"
+TRANSLATE_LOCATION = os.path.abspath(os.path.join(PWD, TRANSLATE_DIR))
+DIST_STATIC_DIR = "static"
+DIST_STATIC_ASSETS_DIR = "news-assets"
+NEWS_DIR = "news"
+META_FILENAME = "meta.json"
+DEFAULT_LANGUAGE_CODE = "en"  # English
+TITLE_DIR = "title"
+TITLE_FILENAME = "title.txt"
+CONTENT_DIR = "content"
+CONTENT_FILENAME = "content.md"
+BANNER_DIR = "banner"
+BANNER_FILENAME = "banner.png"
+URL_PROTOCOL = "https"
+URL_DOMAIN = "news.musicpresence.app"
+
+
+def read_schema_validator(
+    schema_location: str,
+) -> Tuple[JsonDict, jsonschema.Validator]:
+    try:
+        with open(schema_location) as f:
+            schema = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(
+            f"Error: Could not load schema from {schema_location}: {e}", file=sys.stderr
+        )
+        sys.exit(1)
+    try:
+        validator = jsonschema.validators.validator_for(schema)
+        validator.check_schema(schema)
+    except Exception as e:
+        print(f"Error: Invalid schema {schema_location}: {e}", file=sys.stderr)
+        sys.exit(1)
+    return (schema, validator)
+
+
+LANGUAGES_SCHEMA_FILENAME = "languages.schema.json"
+META_SCHEMA_FILENAME = "meta.schema.json"
+NEWS_SCHEMA_FILENAME = "news.schema.json"
+SCHEMA_DIR = "schemas"
+LANGUAGES_SCHEMA_PATH = f"{SCHEMA_DIR}/{LANGUAGES_SCHEMA_FILENAME}"
+META_SCHEMA_PATH = f"{SCHEMA_DIR}/{META_SCHEMA_FILENAME}"
+NEWS_SCHEMA_PATH = f"{SCHEMA_DIR}/{NEWS_SCHEMA_FILENAME}"
+LANGUAGES_SCHEMA_LOCATION = os.path.abspath(os.path.join(PWD, LANGUAGES_SCHEMA_PATH))
+META_SCHEMA_LOCATION = os.path.abspath(os.path.join(PWD, META_SCHEMA_PATH))
+NEWS_SCHEMA_LOCATION = os.path.abspath(os.path.join(PWD, NEWS_SCHEMA_PATH))
+LANGUAGES_SCHEMA, LanguagesValidator = read_schema_validator(LANGUAGES_SCHEMA_LOCATION)
+META_SCHEMA, MetaValidator = read_schema_validator(META_SCHEMA_LOCATION)
+NEWS_SCHEMA, NewsValidator = read_schema_validator(NEWS_SCHEMA_LOCATION)
+registry = (
+    referencing.Registry()
+    .with_resource(
+        META_SCHEMA_FILENAME,
+        referencing.Resource.from_contents(META_SCHEMA),
+    )
+    .with_resource(
+        LANGUAGES_SCHEMA_FILENAME,
+        referencing.Resource.from_contents(LANGUAGES_SCHEMA),
+    )
+    .with_resource(
+        NEWS_SCHEMA_FILENAME,
+        referencing.Resource.from_contents(NEWS_SCHEMA),
+    )
+)
+LANGUAGES_VALIDATOR: jsonschema.Validator = LanguagesValidator(
+    schema=LANGUAGES_SCHEMA, registry=registry
+)
+META_VALIDATOR: jsonschema.Validator = MetaValidator(
+    schema=META_SCHEMA, registry=registry
+)
+NEWS_VALIDATOR: jsonschema.Validator = NewsValidator(
+    schema=NEWS_SCHEMA, registry=registry
+)
+
+
+@dataclass
+class Filters:
+    languages: Optional[List[str]]
+    operating_systems: Optional[List[str]]
+
+
+@dataclass
+class Meta:
+    start_time: Optional[datetime.datetime]
+    end_time: Optional[datetime.datetime]
+    filters: Optional[Filters]
+
+
+@dataclass
+class News:
+    id: NewsId
+    meta: Meta
+    title: Dict[LanguageCode, str]
+    banner: Dict[LanguageCode, str]
+    content: Dict[LanguageCode, str]
+
+
+def to_camel_case(snake_str):
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def transform_keys_to_camel_case(obj):
+    if isinstance(obj, dict):
+        return {
+            to_camel_case(k): transform_keys_to_camel_case(v) for k, v in obj.items()
+        }
+    elif isinstance(obj, list):
+        return [transform_keys_to_camel_case(item) for item in obj]
+    else:
+        return obj
+
+
+@functools.singledispatch
+def encode_value(value: Any) -> Any:
+    if dataclasses.is_dataclass(value):
+        return transform_keys_to_camel_case(dataclasses.asdict(value))
+    return value
+
+
+@encode_value.register(datetime.datetime)
+@encode_value.register(datetime.date)
+def _(value: datetime.date | datetime.datetime) -> str:
+    return value.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def dict_to_meta(data: JsonDict) -> Meta:
+    filters = None
+    if "filters" in data:
+        filters = Filters(
+            languages=data["filters"].get("languages", None),
+            operating_systems=data["filters"].get("operatingSystems", None),
+        )
+    start_time = None
+    end_time = None
+    if "startTime" in data:
+        try:
+            start_time = dateutil.parser.parse(data["startTime"])
+        except Exception as e:
+            print(f"Error: Failed to parse start time: {e}", file=sys.stderr)
+    if "endTime" in data:
+        try:
+            end_time = dateutil.parser.parse(data["endTime"])
+        except Exception as e:
+            print(f"Error: Failed to parse end time: {e}", file=sys.stderr)
+    return Meta(
+        start_time=start_time,
+        end_time=end_time,
+        filters=filters,
+    )
+
+
+def read_file_contents(path: str) -> str:
+    if not os.path.exists(path):
+        print(f"Error: {path} does not exist", file=sys.stderr)
+        sys.exit(1)
+    try:
+        with open(path, "rt") as file:
+            return file.read()
+    except Exception as e:
+        print(f"Error: Failed to read file {path}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def get_languages(meta: Meta, validator: jsonschema.Validator) -> List[str]:
+    if meta.filters is not None and meta.filters.languages is not None:
+        return meta.filters.languages
+    try:
+        properties = validator.schema["properties"]["filters"]["properties"]
+        return properties["languages"]["items"]["enum"]
+    except Exception as e:
+        print(
+            f"Error: Failed to read languages from meta schema: {e}",
+            file=sys.stderr,
+        )
+
+
+def enumerate_news_directories() -> Iterator[Tuple[NewsId, str]]:
+    news_dir = os.path.abspath(os.path.join(PWD, NEWS_DIR))
+    for dir_name in os.listdir(news_dir):
+        full_path = os.path.join(news_dir, dir_name)
+        if not os.path.isdir(full_path):
+            print(f"Skipping non-directory {full_path}", file=sys.stderr)
+            continue
+        if not dir_name.isdigit():
+            print(f"Skipping non-numeric directory {dir_name}", file=sys.stderr)
+            continue
+        yield int(dir_name), full_path
+
+
+def read_news_meta(
+    directory: str, validator: jsonschema.Validator, expected_schema_location: str
+) -> Meta:
+    meta_path = os.path.abspath(os.path.join(directory, META_FILENAME))
+    if not os.path.exists(meta_path):
+        print(f"Error: {META_FILENAME} not found in {directory}", file=sys.stderr)
+        sys.exit(1)
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in {meta_path}: {e}", file=sys.stderr)
+        sys.exit(1)
+    if "$schema" not in meta:
+        print(f"Error: No $schema key in {meta_path}", file=sys.stderr)
+        sys.exit(1)
+    meta_schema_location = os.path.abspath(os.path.join(directory, meta["$schema"]))
+    if meta_schema_location != os.path.abspath(expected_schema_location):
+        print(
+            f"Error: {META_FILENAME} schema is not the expected schema "
+            f"{expected_schema_location}: {meta_schema_location}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    del meta["$schema"]
+    try:
+        validator.validate(meta)
+    except jsonschema.exceptions.ValidationError as e:
+        print(f"Error: {meta_path} failed validation: {e}", file=sys.stderr)
+        sys.exit(1)
+    return dict_to_meta(meta)
+
+
+def enumerate_news_items(
+    directory: str,
+    item_filename: str,
+    languages: List[str],
+    converter: Callable[[str], str] = lambda e: e,
+) -> Iterator[Tuple[LanguageCode, str]]:
+    default_item_path = os.path.join(directory, item_filename)
+    yield (DEFAULT_LANGUAGE_CODE, converter(default_item_path))
+    for dir_name in os.listdir(directory):
+        full_path = os.path.join(directory, dir_name)
+        if not os.path.isdir(full_path):
+            continue
+        language = dir_name
+        if not language in languages:
+            print(
+                f"Error: Unexpected language in {directory}: {language}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        language_item_path = os.path.join(full_path, item_filename)
+        yield (language, converter(language_item_path))
+
+
+def enumerate_titles(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_news_items(
+        directory=os.path.join(directory, TITLE_DIR),
+        item_filename=TITLE_FILENAME,
+        languages=languages,
+        converter=lambda p: read_file_contents(p).strip(),
+    )
+
+
+def enumerate_contents(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_news_items(
+        directory=os.path.join(directory, CONTENT_DIR),
+        item_filename=CONTENT_FILENAME,
+        languages=languages,
+        converter=lambda p: read_file_contents(p).strip(),
+    )
+
+
+def enumerate_banners(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_news_items(
+        directory=os.path.join(directory, BANNER_DIR),
+        item_filename=BANNER_FILENAME,
+        languages=languages,
+    )
+
+
+def enumerate_news() -> Iterator[News]:
+    for news_id, directory in enumerate_news_directories():
+        meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
+        languages = get_languages(meta, META_VALIDATOR)
+        yield News(
+            id=news_id,
+            meta=meta,
+            banner=dict(list(enumerate_banners(directory, languages))),
+            title=dict(list(enumerate_titles(directory, languages))),
+            content=dict(list(enumerate_contents(directory, languages))),
+        )
+
+
+def create_empty_directory(path):
+    p = pathlib.Path(path)
+    if p.exists():
+        shutil.rmtree(p)
+    p.mkdir(parents=True)
+
+
+def clear_dist():
+    create_empty_directory(DIST_LOCATION)
+
+
+def export_to_dist(source_path: str, target_relative_path: str) -> None:
+    if not os.path.exists(source_path):
+        print(f"Error: Failed to export: {source_path} does not exist", file=sys.stderr)
+        sys.exit(1)
+    target_path = os.path.abspath(
+        os.path.join(DIST_LOCATION, DIST_STATIC_DIR, target_relative_path)
+    )
+    if os.path.exists(target_path):
+        print(f"Error: Failed to export: {target_path} already exists", file=sys.stderr)
+        sys.exit(1)
+    target_dirname = os.path.dirname(target_path)
+    pathlib.Path(target_dirname).mkdir(parents=True)
+    try:
+        shutil.copyfile(source_path, target_path)
+    except Exception as e:
+        print(
+            f"Error: Failed to export {source_path} to {target_relative_path}: {e}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def url_for_dist_file(relative_path: str) -> str:
+    return f"{URL_PROTOCOL}://{URL_DOMAIN}/{DIST_STATIC_DIR}/{relative_path}"
+
+
+def enumerate_exported_news():
+    for news in enumerate_news():
+        new_banners = []
+        for language, banner_path in news.banner.items():
+            banner_filename = os.path.basename(banner_path)
+            relative_path = (
+                f"{DIST_STATIC_ASSETS_DIR}/{news.id}/{language}/{banner_filename}"
+            )
+            export_to_dist(banner_path, relative_path)
+            banner_url = url_for_dist_file(relative_path)
+            new_banners.append((language, banner_url))
+        news.banner = dict(new_banners)
+        yield news
+
+
+def deep_walk_and_replace(data: Any, ref_replacer: Callable[[str], str]):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key == "$ref":
+                data[key] = ref_replacer(value)
+            else:
+                deep_walk_and_replace(value, ref_replacer)
+    elif isinstance(data, list):
+        for index, item in enumerate(data):
+            deep_walk_and_replace(item, ref_replacer)
+
+
+def export_schema(schema_validator: jsonschema.Validator, filename: str):
+    schema = copy.deepcopy(schema_validator.schema)
+    print(schema)
+    deep_walk_and_replace(
+        schema, ref_replacer=lambda ref: url_for_dist_file(f"schemas/{ref}")
+    )
+    target_directory = os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "schemas")
+    pathlib.Path(target_directory).mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(target_directory, filename), "wt") as f:
+        f.write(json.dumps(schema, indent=2))
+
+
+def export_schemas_to_dist():
+    export_schema(LANGUAGES_VALIDATOR, LANGUAGES_SCHEMA_FILENAME)
+    export_schema(META_VALIDATOR, META_SCHEMA_FILENAME)
+    export_schema(NEWS_VALIDATOR, NEWS_SCHEMA_FILENAME)
+
+
+@task
+def dist(c: Context):
+    clear_dist()
+    export_schemas_to_dist()
+    news = list(enumerate_exported_news())
+    news = sorted(news, key=lambda n: n.id)
+    root_dict = {
+        "$schema": url_for_dist_file(f"schemas/news.schema.json"),
+        "news": news,
+    }
+    result = json.dumps(root_dict, default=encode_value, separators=(",", ":"))
+    result_pretty = json.dumps(root_dict, indent=2, default=encode_value)
+    print(result_pretty)
+    try:
+        NEWS_VALIDATOR.validate(json.loads(result))
+    except Exception as e:
+        print(f"Error: Failed to validate generated news: {e}", file=sys.stderr)
+        sys.exit(1)
+    with open(os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.min.json"), "wt") as f:
+        f.write(result)
+    with open(os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.json"), "wt") as f:
+        f.write(result_pretty)
+
+
+@task
+def translate(c: Context):
+    create_empty_directory(TRANSLATE_LOCATION)
+    for news in enumerate_news():
+        print(news)

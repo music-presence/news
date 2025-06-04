@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "startTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "filters": {
+      "type": "object",
+      "properties": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "$ref": "https://news.musicpresence.app/static/schemas/languages.schema.json"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "operatingSystems": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "mac",
+              "windows",
+              "linux"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "news"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "news": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "meta",
+          "title",
+          "content"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "meta": {
+            "$ref": "meta.schema.json"
+          },
+          "title": {
+            "type": "object",
+            "required": ["en"],
+            "propertyNames": {
+              "$ref": "languages.schema.json"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "banner": {
+            "type": "object",
+            "required": ["en"],
+            "propertyNames": {
+              "$ref": "languages.schema.json"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": ".*banner\\.png$"
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": ["en"],
+            "propertyNames": {
+              "$ref": "languages.schema.json"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
