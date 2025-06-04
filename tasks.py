@@ -145,10 +145,18 @@ def transform_keys_to_camel_case(obj):
         return obj
 
 
+def remove_none_values(obj):
+    if isinstance(obj, dict):
+        return {k: remove_none_values(v) for k, v in obj.items() if v is not None}
+    return obj
+
+
 @functools.singledispatch
 def encode_value(value: Any) -> Any:
     if dataclasses.is_dataclass(value):
-        return transform_keys_to_camel_case(dataclasses.asdict(value))
+        return transform_keys_to_camel_case(
+            remove_none_values(dataclasses.asdict(value))
+        )
     return value
 
 
