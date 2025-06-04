@@ -7,36 +7,36 @@ This repository hosts news that are shown in the Music Presence app.
 You can contribute a translation of a news entry
 by following these instructions:
 
-1. Open the [`translate`](./translate/) directory on
-   [github.com](https://github.com/music-presence/news/tree/main/translate).
-2. Choose a news entry you wish to translate.
-   This is a subdirectory with a number, e.g.
-   [`1`](https://github.com/music-presence/news/tree/main/translate/1).
-   If there is only one news entry it will open automatically
-   and you can skip this step.
-3. Choose the language code of the language you want to translate.
-   For English this would e.g. be
-   [`en.md`](https://github.com/music-presence/news/blob/main/translate/1/en.md).
-   Ignore the file extension `md` in this case.
-   You can find a list of all language codes
-   [here](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes).
-   A markdown file should open with some important hints.
-   Please read those first before proceeding.
-4. Make sure you are logged into GitHub.
-   Now click on the pencil icon in the top-right corner
-   to fork the repository and edit the file.
-   Confirm by clicking "Fork this repository".
-5. An editor should open in which you should be able to make changes.
-   Translate the text between horizontal bars (---)
-   and keep the notes in mind that are written in the file.
-   You can switch between "Edit" and "Preview"
-   to see the result of your translations.
-6. Once you are done, click "Commit changes...",
-   then "Propose changes".
-   Wait until a new page loads,
-   then click "Create pull request"
-   and click "Create pull request" again.
-7. Success! 🎊 Thank you for contributing a translation for a news entry!
-   I will come back to you as soon as possible
-   and if everything's good, you should see the translated news
-   in thet app soon.
+1. Become a Music Presence translator first,
+   by following the instructions
+   [here](https://github.com/ungive/discord-music-presence/blob/master/documentation/translations.md).
+2. Open [translate.codeberg.org/projects/music-presence/app-news](https://translate.codeberg.org/projects/music-presence/app-news/)
+   which will give you an overview over what is left for translation.
+   Once you were invited to the project, you should able to translate right away.
+
+Before starting, keep the following in mind:
+- Translations of the "banner" and "title" keys
+  are the most important
+  (search for "Key" on the page of a translation string),
+  as these texts are the first that users read,
+  when they see a news popup.
+  Translating these is quick and is more than enough.
+- If you want to go the extra mile and translate the entire news text,
+  then you are more than welcome to do so.
+  Please try your best to match the tone of the original news entry.
+  Also, please only translate if you are confident in your translating
+  of continuous text (rather than individual words).
+  If you feel like your translation would not match the original,
+  it is okay to leave the news text untranslated.
+- Thank you for contributing!
+
+## Attribution of your translations
+
+Since you are already a Music Presence translator,
+your translations of the news will be attributed just the same way
+as your app translations in the About window of the app.
+
+## License
+
+MIT License  
+See [LICENSE](./LICENSE) for details.
