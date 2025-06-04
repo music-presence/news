@@ -14,6 +14,7 @@ import os
 import sys
 import shutil
 import copy
+import re
 
 import jsonschema
 import jsonschema.validators
@@ -37,12 +38,10 @@ META_FILENAME = "meta.json"
 DEFAULT_LANGUAGE_CODE = "en"  # English
 TRANSLATIONS_DIR = "translations"
 TRANSLATIONS_DEFAULT_JSON_FILENAME = f"{DEFAULT_LANGUAGE_CODE}.json"
-TITLE_DIR = "title"
-TITLE_FILENAME = "title.txt"
-CONTENT_DIR = "content"
 CONTENT_FILENAME = "content.md"
 BANNER_DIR = "banner"
 BANNER_FILENAME = "image.png"
+BANNER_STRINGS_FILENAME = "strings.txt"
 URL_PROTOCOL = "https"
 URL_DOMAIN = "news.musicpresence.app"
 
@@ -117,6 +116,29 @@ class Meta:
     start_time: Optional[datetime.datetime]
     end_time: Optional[datetime.datetime]
     filters: Optional[Filters]
+
+
+@dataclass
+class Content:
+    title: str
+    banner_path: str
+    banner_strings: str
+    content: str
+
+
+@dataclass
+class Translation:
+    title: str
+    banner: str
+    content: str
+
+    @classmethod
+    def from_content(cls, content: Content):
+        return Translation(
+            title=content.title,
+            banner=content.banner_strings,
+            content=content.content,
+        )
 
 
 @dataclass
@@ -233,18 +255,6 @@ def enumerate_news_directories() -> Iterator[Tuple[NewsId, str]]:
         if not dir_name.isdigit():
             print(f"Skipping non-numeric directory {dir_name}", file=sys.stderr)
             continue
-        translations_path = os.path.join(full_path, TRANSLATIONS_DIR)
-        if not os.path.exists(translations_path):
-            print(f"Error: Missing translations for {full_path}", file=sys.stderr)
-            sys.exit(1)
-        if not os.path.exists(
-            os.path.join(translations_path, TRANSLATIONS_DEFAULT_JSON_FILENAME)
-        ):
-            print(
-                f"Error: Missing default translation for {full_path}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
         yield int(dir_name), full_path
 
 
@@ -354,10 +364,26 @@ def enumerate_contents(
     yield from enumerate_translations(directory, languages, key="content")
 
 
+def ensure_translations(news_directory: str):
+    translations_path = os.path.join(news_directory, TRANSLATIONS_DIR)
+    if not os.path.exists(translations_path):
+        print(f"Error: Missing translations for {news_directory}", file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists(
+        os.path.join(translations_path, TRANSLATIONS_DEFAULT_JSON_FILENAME)
+    ):
+        print(
+            f"Error: Missing default translation for {news_directory}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def enumerate_news() -> Iterator[News]:
     for news_id, directory in enumerate_news_directories():
         meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
         languages = get_languages(meta, META_VALIDATOR)
+        ensure_translations(directory)
         yield News(
             id=news_id,
             meta=meta,
@@ -456,6 +482,97 @@ def export_schemas_to_dist():
     export_schema(NEWS_VALIDATOR, NEWS_SCHEMA_FILENAME)
 
 
+def parse_content_markdown(markdown_filepath: str) -> Content:
+    banner_strings_filepath = os.path.join(
+        os.path.dirname(markdown_filepath), BANNER_DIR, BANNER_STRINGS_FILENAME
+    )
+    if not os.path.exists(banner_strings_filepath):
+        print(
+            f"Error: banner strings do not exist: {banner_strings_filepath}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    try:
+        with open(banner_strings_filepath, "rt") as f:
+            banner_strings = f.read().strip()
+    except Exception as e:
+        print(
+            f"Error: Failed to read banner strings: {banner_strings_filepath}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    try:
+        with open(markdown_filepath, "rt") as f:
+            markdown_text = f.read()
+    except Exception as e:
+        print(
+            f"Error: Failed to read markdown file: {markdown_filepath}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    lines = []
+    count = 0
+    for line in markdown_text.split("\n"):
+        empty = len(line.strip()) == 0
+        if not empty:
+            count += 1
+        if count < 2 and empty:
+            continue
+        lines.append(line)
+    result = {
+        "banner_path": None,
+        "banner_strings": banner_strings,
+        "title": None,
+        "content": None,
+    }
+    if lines and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[0])):
+        result["banner_path"] = banner_match.group(1).strip()
+    if len(lines) > 1 and (title_match := re.match(r"##? (.+)", lines[1])):
+        result["title"] = title_match.group(1).strip()
+    if len(lines) > 2:
+        result["content"] = "\n".join(lines[2:]).strip()
+    content = Content(**result)
+    if content.title is None:
+        print(f"Error: title is empty in {markdown_filepath}", file=sys.stderr)
+        sys.exit(1)
+    if content.content is None:
+        print(f"Error: content is empty in {markdown_filepath}", file=sys.stderr)
+        sys.exit(1)
+    if content.banner_path is None:
+        print(f"Error: banner is empty in {markdown_filepath}", file=sys.stderr)
+        sys.exit(1)
+    content.banner_path = os.path.abspath(
+        os.path.join(os.path.dirname(markdown_filepath), content.banner_path)
+    )
+    if not os.path.exists(content.banner_path):
+        print(f"Error: banner does not exist: {content.banner_path}", file=sys.stderr)
+        sys.exit(1)
+    return content
+
+
+@task
+def translations(c: Context):
+    for news_id, directory in enumerate_news_directories():
+        meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
+        content_filepath = os.path.abspath(os.path.join(directory, CONTENT_FILENAME))
+        content = parse_content_markdown(content_filepath)
+        translation = Translation.from_content(content)
+        root_result = json.dumps(translation, default=encode_value, indent=2)
+        translations_directory = os.path.join(os.path.join(directory, TRANSLATIONS_DIR))
+        pathlib.Path(translations_directory).mkdir(parents=True, exist_ok=True)
+        for language in get_languages(meta, META_VALIDATOR):
+            language_filepath = os.path.join(translations_directory, f"{language}.json")
+            to_write = json.dumps(dict())
+            if language == DEFAULT_LANGUAGE_CODE:
+                to_write = root_result
+                if os.path.exists(language_filepath):
+                    os.unlink(language_filepath)
+            if not os.path.exists(language_filepath):
+                with open(language_filepath, 'wt') as f:
+                    f.write(to_write)
+                print(f"Created {os.path.relpath(language_filepath, PWD)}", file=sys.stderr)
+
+
 @task
 def dist(c: Context):
     clear_dist()
@@ -481,10 +598,4 @@ def dist(c: Context):
         f.write(result_pretty)
 
 
-@task
-def translate(c: Context):
-    # TODO
-    pass
-
-
-# TODO target to print which banners have translations but not image export
+# TODO target to print which banners have translations but no image export
