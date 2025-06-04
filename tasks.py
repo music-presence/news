@@ -240,7 +240,7 @@ def get_all_languages() -> List[str]:
     return get_validator_languages(LANGUAGES_VALIDATOR)
 
 
-def get_languages(meta: Meta, validator: jsonschema.Validator) -> List[str]:
+def get_languages(meta: Meta) -> List[str]:
     if meta.filters is not None and meta.filters.languages is not None:
         return meta.filters.languages
     return get_all_languages()
@@ -382,7 +382,7 @@ def ensure_translations(news_directory: str):
 def enumerate_news() -> Iterator[News]:
     for news_id, directory in enumerate_news_directories():
         meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
-        languages = get_languages(meta, META_VALIDATOR)
+        languages = get_languages(meta)
         ensure_translations(directory)
         yield News(
             id=news_id,
@@ -482,9 +482,9 @@ def export_schemas_to_dist():
     export_schema(NEWS_VALIDATOR, NEWS_SCHEMA_FILENAME)
 
 
-def parse_content_markdown(markdown_filepath: str) -> Content:
+def read_banner_strings(directory: str) -> str:
     banner_strings_filepath = os.path.join(
-        os.path.dirname(markdown_filepath), BANNER_DIR, BANNER_STRINGS_FILENAME
+        directory, BANNER_DIR, BANNER_STRINGS_FILENAME
     )
     if not os.path.exists(banner_strings_filepath):
         print(
@@ -501,6 +501,11 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
             file=sys.stderr,
         )
         sys.exit(1)
+    return banner_strings
+
+
+def parse_content_markdown(markdown_filepath: str) -> Content:
+    banner_strings = read_banner_strings(os.path.dirname(markdown_filepath))
     try:
         with open(markdown_filepath, "rt") as f:
             markdown_text = f.read()
@@ -560,7 +565,7 @@ def translations(c: Context):
         root_result = json.dumps(translation, default=encode_value, indent=2)
         translations_directory = os.path.join(os.path.join(directory, TRANSLATIONS_DIR))
         pathlib.Path(translations_directory).mkdir(parents=True, exist_ok=True)
-        for language in get_languages(meta, META_VALIDATOR):
+        for language in get_languages(meta):
             language_filepath = os.path.join(translations_directory, f"{language}.json")
             to_write = json.dumps(dict())
             if language == DEFAULT_LANGUAGE_CODE:
@@ -568,9 +573,26 @@ def translations(c: Context):
                 if os.path.exists(language_filepath):
                     os.unlink(language_filepath)
             if not os.path.exists(language_filepath):
-                with open(language_filepath, 'wt') as f:
+                with open(language_filepath, "wt") as f:
                     f.write(to_write)
-                print(f"Created {os.path.relpath(language_filepath, PWD)}", file=sys.stderr)
+                print(
+                    f"Created {os.path.relpath(language_filepath, PWD)}",
+                    file=sys.stderr,
+                )
+
+
+@task
+def missing_banners(c: Context):
+    for news_id, directory in enumerate_news_directories():
+        meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
+        for language in get_languages(meta):
+            if not os.path.exists(
+                os.path.join(directory, BANNER_DIR, language, BANNER_FILENAME)
+            ):
+                print(
+                    f"Missing banner for news {news_id} and language '{language}'",
+                    file=sys.stderr,
+                )
 
 
 @task
@@ -596,6 +618,3 @@ def dist(c: Context):
         f.write(result)
     with open(os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.json"), "wt") as f:
         f.write(result_pretty)
-
-
-# TODO target to print which banners have translations but no image export
