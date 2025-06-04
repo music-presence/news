@@ -20,7 +20,7 @@
 
 ---
 
-This is an example news popup
+Questo è un esempio di pop-up di notizie
 
 ---
 
@@ -30,9 +30,9 @@ This is an example news popup
 
 ---
 
-**This is some news example content.**
+**Questo è un esempio di contenuto di notizie.**
 
-Try not to embed images here,
-just write text and share some [links](https://musicpresence.app).
+Prova a non incorporare immagini qui,
+scrivi solo del testo e condividi dei [link](https://musicpresence.app).
 
 ---
