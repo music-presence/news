@@ -18,6 +18,7 @@ import copy
 import jsonschema
 import jsonschema.validators
 import referencing
+import jinja2
 
 
 NewsId = int
@@ -29,6 +30,7 @@ DIST_DIR = "docs"
 DIST_LOCATION = os.path.abspath(os.path.join(PWD, DIST_DIR))
 TRANSLATE_DIR = "translate"
 TRANSLATE_LOCATION = os.path.abspath(os.path.join(PWD, TRANSLATE_DIR))
+TRANSLATE_TEMPLATE = "templates/translate-news.md.jinja2"
 DIST_STATIC_DIR = "static"
 DIST_STATIC_ASSETS_DIR = "news-assets"
 NEWS_DIR = "news"
@@ -192,17 +194,25 @@ def read_file_contents(path: str) -> str:
         sys.exit(1)
 
 
-def get_languages(meta: Meta, validator: jsonschema.Validator) -> List[str]:
-    if meta.filters is not None and meta.filters.languages is not None:
-        return meta.filters.languages
+def get_validator_languages(validator: jsonschema.Validator) -> List[str]:
     try:
-        properties = validator.schema["properties"]["filters"]["properties"]
-        return properties["languages"]["items"]["enum"]
+        return validator.schema["enum"]
     except Exception as e:
         print(
             f"Error: Failed to read languages from meta schema: {e}",
             file=sys.stderr,
         )
+        sys.exit(1)
+
+
+def get_all_languages() -> List[str]:
+    return get_validator_languages(LANGUAGES_VALIDATOR)
+
+
+def get_languages(meta: Meta, validator: jsonschema.Validator) -> List[str]:
+    if meta.filters is not None and meta.filters.languages is not None:
+        return meta.filters.languages
+    return get_all_languages()
 
 
 def enumerate_news_directories() -> Iterator[Tuple[NewsId, str]]:
@@ -425,8 +435,42 @@ def dist(c: Context):
         f.write(result_pretty)
 
 
+def render_markdown_with_variables(template_path, variables):
+    with open(template_path, "rt") as f:
+        template = f.read()
+    template = jinja2.Template(template)
+    rendered_content = template.render(variables)
+    return rendered_content
+
+
+# TODO only create a translate file if the news entry is still relevant
+
+
 @task
 def translate(c: Context):
     create_empty_directory(TRANSLATE_LOCATION)
     for news in enumerate_news():
-        print(news)
+        out_path = pathlib.Path(os.path.join(TRANSLATE_LOCATION, str(news.id)))
+        out_path.mkdir(parents=True, exist_ok=True)
+        for language in get_all_languages():
+            result = render_markdown_with_variables(
+                os.path.join(PWD, TRANSLATE_TEMPLATE),
+                {
+                    "id": news.id,
+                    "banner_path": os.path.relpath(
+                        news.banner.get(language, news.banner[DEFAULT_LANGUAGE_CODE]),
+                        out_path,
+                    ),
+                    "banner_strings": "...",  # TODO
+                    "title": news.title.get(
+                        language,
+                        news.title[DEFAULT_LANGUAGE_CODE],
+                    ),
+                    "content": news.content.get(
+                        language,
+                        news.content[DEFAULT_LANGUAGE_CODE],
+                    ),
+                },
+            )
+            with open(os.path.join(out_path, f"{language}.md"), "wt") as f:
+                f.write(result)
