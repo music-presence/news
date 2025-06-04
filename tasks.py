@@ -26,6 +26,8 @@ LanguageCode = str
 JsonDict = Dict[str, Any]
 
 PWD = os.path.dirname(__file__)
+STATIC_DIR = "static"
+STATIC_LOCATION = os.path.abspath(os.path.join(PWD, STATIC_DIR))
 DIST_DIR = "docs"
 DIST_LOCATION = os.path.abspath(os.path.join(PWD, DIST_DIR))
 TRANSLATE_DIR = "translate"
@@ -405,6 +407,14 @@ def export_schema(schema_validator: jsonschema.Validator, filename: str):
         f.write(json.dumps(schema, indent=2))
 
 
+def export_static_to_dist():
+    for filename in os.listdir(STATIC_LOCATION):
+        src_path = os.path.join(STATIC_LOCATION, filename)
+        if os.path.isfile(src_path):
+            dest_path = os.path.join(DIST_LOCATION, filename)
+            shutil.copyfile(src_path, dest_path)
+
+
 def export_schemas_to_dist():
     export_schema(LANGUAGES_VALIDATOR, LANGUAGES_SCHEMA_FILENAME)
     export_schema(META_VALIDATOR, META_SCHEMA_FILENAME)
@@ -414,6 +424,7 @@ def export_schemas_to_dist():
 @task
 def dist(c: Context):
     clear_dist()
+    export_static_to_dist()
     export_schemas_to_dist()
     news = list(enumerate_exported_news())
     news = sorted(news, key=lambda n: n.id)
