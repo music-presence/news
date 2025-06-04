@@ -2,7 +2,7 @@
   "$schema": "https://news.musicpresence.app/static/schemas/news.schema.json",
   "news": [
     {
-      "id": 1,
+      "id": 0,
       "meta": {
         "startTime": "2025-06-04T12:00:00.022Z",
         "endTime": "2025-06-05T12:00:00.320Z",
@@ -19,12 +19,12 @@
         }
       },
       "title": {
-        "en": "This is an example news popup",
+        "en": "This is a changed example news popup",
         "de": "Dies ist ein Beispiel Nachrichten-Popup",
         "it": "Questo \u00e8 un esempio di pop-up di notizie"
       },
       "banner": {
-        "en": "https://news.musicpresence.app/static/news-assets/1/en/banner.png"
+        "en": "https://news.musicpresence.app/static/news-assets/0/en/image.png"
       },
       "content": {
         "en": "**This is some news example content.**\n\nTry not to embed images here,\njust write text and share some [links](https://musicpresence.app).",

@@ -1,4 +1,4 @@
-![](./banner/image.png)
+![](./banner/en/image.png)
 
 ## This is an example news popup
 

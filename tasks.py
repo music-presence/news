@@ -18,7 +18,6 @@ import copy
 import jsonschema
 import jsonschema.validators
 import referencing
-import jinja2
 
 
 NewsId = int
@@ -30,20 +29,20 @@ STATIC_DIR = "static"
 STATIC_LOCATION = os.path.abspath(os.path.join(PWD, STATIC_DIR))
 DIST_DIR = "docs"
 DIST_LOCATION = os.path.abspath(os.path.join(PWD, DIST_DIR))
-TRANSLATE_DIR = "translate"
-TRANSLATE_LOCATION = os.path.abspath(os.path.join(PWD, TRANSLATE_DIR))
-TRANSLATE_TEMPLATE = "templates/translate-news.md.jinja2"
 DIST_STATIC_DIR = "static"
 DIST_STATIC_ASSETS_DIR = "news-assets"
-NEWS_DIR = "news"
+NEWS_DIR = "news2"
+NEWS_LOCATION = os.path.abspath(os.path.join(PWD, NEWS_DIR))
 META_FILENAME = "meta.json"
 DEFAULT_LANGUAGE_CODE = "en"  # English
+TRANSLATIONS_DIR = "translations"
+TRANSLATIONS_DEFAULT_JSON_FILENAME = f"{DEFAULT_LANGUAGE_CODE}.json"
 TITLE_DIR = "title"
 TITLE_FILENAME = "title.txt"
 CONTENT_DIR = "content"
 CONTENT_FILENAME = "content.md"
 BANNER_DIR = "banner"
-BANNER_FILENAME = "banner.png"
+BANNER_FILENAME = "image.png"
 URL_PROTOCOL = "https"
 URL_DOMAIN = "news.musicpresence.app"
 
@@ -226,15 +225,26 @@ def get_languages(meta: Meta, validator: jsonschema.Validator) -> List[str]:
 
 
 def enumerate_news_directories() -> Iterator[Tuple[NewsId, str]]:
-    news_dir = os.path.abspath(os.path.join(PWD, NEWS_DIR))
-    for dir_name in os.listdir(news_dir):
-        full_path = os.path.join(news_dir, dir_name)
+    for dir_name in os.listdir(NEWS_LOCATION):
+        full_path = os.path.join(NEWS_LOCATION, dir_name)
         if not os.path.isdir(full_path):
             print(f"Skipping non-directory {full_path}", file=sys.stderr)
             continue
         if not dir_name.isdigit():
             print(f"Skipping non-numeric directory {dir_name}", file=sys.stderr)
             continue
+        translations_path = os.path.join(full_path, TRANSLATIONS_DIR)
+        if not os.path.exists(translations_path):
+            print(f"Error: Missing translations for {full_path}", file=sys.stderr)
+            sys.exit(1)
+        if not os.path.exists(
+            os.path.join(translations_path, TRANSLATIONS_DEFAULT_JSON_FILENAME)
+        ):
+            print(
+                f"Error: Missing default translation for {full_path}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         yield int(dir_name), full_path
 
 
@@ -277,7 +287,12 @@ def enumerate_news_items(
     languages: List[str],
     converter: Callable[[str], str] = lambda e: e,
 ) -> Iterator[Tuple[LanguageCode, str]]:
-    default_item_path = os.path.join(directory, item_filename)
+    default_item_path = os.path.join(directory, DEFAULT_LANGUAGE_CODE, item_filename)
+    if not os.path.exists(default_item_path):
+        print(
+            f"Error: Expected file does not exist: {default_item_path}",
+            file=sys.stderr,
+        )
     yield (DEFAULT_LANGUAGE_CODE, converter(default_item_path))
     for dir_name in os.listdir(directory):
         full_path = os.path.join(directory, dir_name)
@@ -294,28 +309,6 @@ def enumerate_news_items(
         yield (language, converter(language_item_path))
 
 
-def enumerate_titles(
-    directory: str, languages: List[str]
-) -> Iterator[Tuple[LanguageCode, str]]:
-    yield from enumerate_news_items(
-        directory=os.path.join(directory, TITLE_DIR),
-        item_filename=TITLE_FILENAME,
-        languages=languages,
-        converter=lambda p: read_file_contents(p).strip(),
-    )
-
-
-def enumerate_contents(
-    directory: str, languages: List[str]
-) -> Iterator[Tuple[LanguageCode, str]]:
-    yield from enumerate_news_items(
-        directory=os.path.join(directory, CONTENT_DIR),
-        item_filename=CONTENT_FILENAME,
-        languages=languages,
-        converter=lambda p: read_file_contents(p).strip(),
-    )
-
-
 def enumerate_banners(
     directory: str, languages: List[str]
 ) -> Iterator[Tuple[LanguageCode, str]]:
@@ -324,6 +317,41 @@ def enumerate_banners(
         item_filename=BANNER_FILENAME,
         languages=languages,
     )
+
+
+def enumerate_translations(
+    directory: str, languages: List[str], key: str
+) -> Iterator[Tuple[LanguageCode, str]]:
+    translations_dir = os.path.join(directory, TRANSLATIONS_DIR)
+    for language in languages:
+        filepath = os.path.join(translations_dir, f"{language}.json")
+        if not os.path.exists(filepath):
+            print(f"Skipping {filepath}: Language does not exist", file=sys.stderr)
+            continue
+        try:
+            with open(filepath, "rt") as f:
+                data = json.loads(f.read())
+        except Exception as e:
+            print(
+                f"Error: Failed to load translation {filepath}: {e}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if not key in data or len(str(data[key])) == 0:
+            continue
+        yield (language, data[key])
+
+
+def enumerate_titles(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_translations(directory, languages, key="title")
+
+
+def enumerate_contents(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_translations(directory, languages, key="content")
 
 
 def enumerate_news() -> Iterator[News]:
@@ -405,7 +433,6 @@ def deep_walk_and_replace(data: Any, ref_replacer: Callable[[str], str]):
 
 def export_schema(schema_validator: jsonschema.Validator, filename: str):
     schema = copy.deepcopy(schema_validator.schema)
-    print(schema)
     deep_walk_and_replace(
         schema, ref_replacer=lambda ref: url_for_dist_file(f"schemas/{ref}")
     )
@@ -454,42 +481,10 @@ def dist(c: Context):
         f.write(result_pretty)
 
 
-def render_markdown_with_variables(template_path, variables):
-    with open(template_path, "rt") as f:
-        template = f.read()
-    template = jinja2.Template(template)
-    rendered_content = template.render(variables)
-    return rendered_content
-
-
-# TODO only create a translate file if the news entry is still relevant
-
-
 @task
 def translate(c: Context):
-    create_empty_directory(TRANSLATE_LOCATION)
-    for news in enumerate_news():
-        out_path = pathlib.Path(os.path.join(TRANSLATE_LOCATION, str(news.id)))
-        out_path.mkdir(parents=True, exist_ok=True)
-        for language in get_all_languages():
-            result = render_markdown_with_variables(
-                os.path.join(PWD, TRANSLATE_TEMPLATE),
-                {
-                    "id": news.id,
-                    "banner_path": os.path.relpath(
-                        news.banner.get(language, news.banner[DEFAULT_LANGUAGE_CODE]),
-                        out_path,
-                    ),
-                    "banner_strings": "...",  # TODO
-                    "title": news.title.get(
-                        language,
-                        news.title[DEFAULT_LANGUAGE_CODE],
-                    ),
-                    "content": news.content.get(
-                        language,
-                        news.content[DEFAULT_LANGUAGE_CODE],
-                    ),
-                },
-            )
-            with open(os.path.join(out_path, f"{language}.md"), "wt") as f:
-                f.write(result)
+    # TODO
+    pass
+
+
+# TODO target to print which banners have translations but not image export

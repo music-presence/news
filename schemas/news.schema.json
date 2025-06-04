@@ -46,7 +46,7 @@
             },
             "additionalProperties": {
               "type": "string",
-              "pattern": ".*banner\\.png$"
+              "pattern": ".*image\\.png$"
             }
           },
           "content": {
