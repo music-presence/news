@@ -562,7 +562,7 @@ def translations(c: Context):
         content_filepath = os.path.abspath(os.path.join(directory, CONTENT_FILENAME))
         content = parse_content_markdown(content_filepath)
         translation = Translation.from_content(content)
-        root_result = json.dumps(translation, default=encode_value, indent=2)
+        root_result = json.dumps(translation, default=encode_value, indent=4)
         translations_directory = os.path.join(os.path.join(directory, TRANSLATIONS_DIR))
         pathlib.Path(translations_directory).mkdir(parents=True, exist_ok=True)
         for language in get_languages(meta):
