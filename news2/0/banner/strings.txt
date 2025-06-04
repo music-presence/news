@@ -1,0 +1,3 @@
+internal rework
+and macOS 15.4 fix
+Music Presence - version 2.3.0
