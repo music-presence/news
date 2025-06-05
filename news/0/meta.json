@@ -3,11 +3,6 @@
   "startTime": "2025-06-04T12:00:00.022Z",
   "endTime": "2025-06-05T12:00:00.320Z",
   "filters": {
-    "languages": [
-      "en",
-      "de",
-      "it"
-    ],
     "operatingSystems": [
       "linux",
       "windows"
