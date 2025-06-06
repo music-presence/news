@@ -106,6 +106,32 @@ NEWS_VALIDATOR: jsonschema.Validator = NewsValidator(
 )
 
 
+def translation_out_of_sync(id: NewsId, name: str, current: str, translation: str):
+    print(
+        f"Error: News {id}: Translation for {name} is out of sync: "
+        f'"{translation}" for "{current}"',
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def original_translation(translations: Dict[LanguageCode, str]):
+    if not DEFAULT_LANGUAGE_CODE in translations:
+        print(
+            f"Error: Missing default translation in {repr(translations)}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return translations[DEFAULT_LANGUAGE_CODE]
+
+
+def check_translation(
+    id: NewsId, name: str, original: str, translations: Dict[LanguageCode, str]
+):
+    if original_translation(translations) != original:
+        translation_out_of_sync(id, name, original, original_translation(translations))
+
+
 @dataclass
 class Filters:
     languages: Optional[List[str]]
@@ -179,6 +205,42 @@ class News:
     banner: Dict[LanguageCode, str]
     content: Dict[LanguageCode, str]
     buttons: List[NewsButton]
+
+    @classmethod
+    def create(
+        cls,
+        id: NewsId,
+        meta: Meta,
+        content: Content,
+        directory: str,
+        languages: List[str],
+    ):
+        result = News(
+            id=id,
+            meta=meta,
+            banner=dict(list(enumerate_translated_banners(directory, languages))),
+            title=dict(list(enumerate_translated_titles(directory, languages))),
+            content=dict(list(enumerate_translated_contents(directory, languages))),
+            buttons=list(
+                enumerate_translated_news_buttons(content, directory, languages)
+            ),
+        )
+        banner_strings = dict(
+            list(enumerate_translations(directory, languages, "banner"))
+        )
+        check_translation(id, "title", content.title, result.title)
+        check_translation(id, "content", content.content, result.content)
+        check_translation(id, "banner", content.banner_strings, banner_strings)
+        if len(result.buttons) != len(content.buttons):
+            print(
+                f"Error: Button count mismatch: "
+                f"Expected {len(content.buttons)}, got {len(result.buttons)}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        for content_button, result_button in zip(content.buttons, result.buttons):
+            check_translation(id, "button", content_button.label, result_button.label)
+        return result
 
 
 def to_camel_case(snake_str):
@@ -455,15 +517,12 @@ def enumerate_news() -> Iterator[News]:
         content = parse_content_markdown(content_filepath)
         languages = get_languages(meta)
         ensure_translations(directory)
-        yield News(
+        yield News.create(
             id=news_id,
             meta=meta,
-            banner=dict(list(enumerate_translated_banners(directory, languages))),
-            title=dict(list(enumerate_translated_titles(directory, languages))),
-            content=dict(list(enumerate_translated_contents(directory, languages))),
-            buttons=list(
-                enumerate_translated_news_buttons(content, directory, languages)
-            ),
+            content=content,
+            directory=directory,
+            languages=languages,
         )
 
 
@@ -720,7 +779,6 @@ def missing_banners(c: Context):
                 )
 
 
-# TODO catch when calling dist with out of sync translations
 # TODO pre-commit hook for calling `inv translations`
 
 
