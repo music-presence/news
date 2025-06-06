@@ -46,6 +46,8 @@ BANNER_FILENAME = "image.png"
 BANNER_STRINGS_FILENAME = "strings.txt"
 URL_PROTOCOL = "https"
 URL_DOMAIN = "news.musicpresence.app"
+TEMPLATE_DIR = "template"
+TEMPLATE_LOCATION = os.path.abspath(os.path.join(PWD, TEMPLATE_DIR))
 
 
 def read_schema_validator(
@@ -855,3 +857,15 @@ def publish(c: Context, id: NewsId):
     run_command("git", "add", meta_path)
     run_command("git", "commit", "-m", f"Publish news with ID {id}")
     run_command("git", "push", "origin", "main")
+
+
+@task
+def new(c: Context):
+    all_ids = [id for id, _ in enumerate_news_directories()]
+    max_id = max(0, max(all_ids, default=[0]))
+    next_id = max_id + 1
+    next_path = os.path.join(NEWS_LOCATION, str(next_id))
+    if os.path.exists(next_path):
+        shutil.rmtree(next_path)
+    shutil.copytree(TEMPLATE_LOCATION, next_path)
+    print(f"Created news entry with ID {next_id} at {os.path.relpath(next_path, PWD)}")
