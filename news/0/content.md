@@ -1,6 +1,6 @@
 ![](./banner/en/image.png)
 
-## This is an example news popup changed
+## This is an example news popup
 
 **This is some news example content.**
 
