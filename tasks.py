@@ -855,6 +855,7 @@ def publish(c: Context, id: NewsId):
     with open(meta_path, "wt") as f:
         f.write(json.dumps(meta, indent=2) + "\n")
     run_command("git", "add", meta_path)
+    run_command("git", "add", news_path)
     run_command("git", "commit", "-m", f"Publish news with ID {id}")
     run_command("git", "push", "origin", "main")
 
