@@ -29,7 +29,9 @@
           },
           "title": {
             "type": "object",
-            "required": ["en"],
+            "required": [
+              "en"
+            ],
             "propertyNames": {
               "$ref": "languages.schema.json"
             },
@@ -40,7 +42,9 @@
           },
           "banner": {
             "type": "object",
-            "required": ["en"],
+            "required": [
+              "en"
+            ],
             "propertyNames": {
               "$ref": "languages.schema.json"
             },
@@ -51,13 +55,49 @@
           },
           "content": {
             "type": "object",
-            "required": ["en"],
+            "required": [
+              "en"
+            ],
             "propertyNames": {
               "$ref": "languages.schema.json"
             },
             "additionalProperties": {
               "type": "string",
               "minLength": 1
+            }
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "url",
+                "aside"
+              ],
+              "properties": {
+                "label": {
+                  "type": "object",
+                  "required": [
+                    "en"
+                  ],
+                  "propertyNames": {
+                    "$ref": "languages.schema.json"
+                  },
+                  "additionalProperties": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "aside": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
             }
           }
         },

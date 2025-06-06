@@ -15,6 +15,7 @@ import sys
 import shutil
 import copy
 import re
+import urllib.parse
 
 import jsonschema
 import jsonschema.validators
@@ -119,11 +120,19 @@ class Meta:
 
 
 @dataclass
+class ContentButton:
+    aside: bool
+    label: str
+    url: str
+
+
+@dataclass
 class Content:
     title: str
     banner_path: str
     banner_strings: str
     content: str
+    buttons: List[ContentButton]
 
 
 @dataclass
@@ -131,6 +140,7 @@ class Translation:
     title: str
     banner: str
     content: str
+    buttons: List[str]
 
     @classmethod
     def from_content(cls, content: Content):
@@ -138,6 +148,26 @@ class Translation:
             title=content.title,
             banner=content.banner_strings,
             content=content.content,
+            buttons=[button.label for button in content.buttons],
+        )
+
+
+@dataclass
+class NewsButton:
+    label: Dict[LanguageCode, str]
+    url: str
+    aside: bool
+
+    @classmethod
+    def from_content_button_and_translations(
+        cls,
+        content_button: ContentButton,
+        translations: List[Tuple[LanguageCode, str]],
+    ):
+        return NewsButton(
+            label=dict(translations),
+            url=content_button.url,
+            aside=content_button.aside,
         )
 
 
@@ -148,6 +178,7 @@ class News:
     title: Dict[LanguageCode, str]
     banner: Dict[LanguageCode, str]
     content: Dict[LanguageCode, str]
+    buttons: List[NewsButton]
 
 
 def to_camel_case(snake_str):
@@ -319,7 +350,7 @@ def enumerate_news_items(
         yield (language, converter(language_item_path))
 
 
-def enumerate_banners(
+def enumerate_translated_banners(
     directory: str, languages: List[str]
 ) -> Iterator[Tuple[LanguageCode, str]]:
     yield from enumerate_news_items(
@@ -331,7 +362,7 @@ def enumerate_banners(
 
 def enumerate_translations(
     directory: str, languages: List[str], key: str
-) -> Iterator[Tuple[LanguageCode, str]]:
+) -> Iterator[Tuple[LanguageCode, Any]]:
     translations_dir = os.path.join(directory, TRANSLATIONS_DIR)
     for language in languages:
         filepath = os.path.join(translations_dir, f"{language}.json")
@@ -352,16 +383,42 @@ def enumerate_translations(
         yield (language, data[key])
 
 
-def enumerate_titles(
+def enumerate_translated_titles(
     directory: str, languages: List[str]
 ) -> Iterator[Tuple[LanguageCode, str]]:
     yield from enumerate_translations(directory, languages, key="title")
 
 
-def enumerate_contents(
+def enumerate_translated_contents(
     directory: str, languages: List[str]
 ) -> Iterator[Tuple[LanguageCode, str]]:
     yield from enumerate_translations(directory, languages, key="content")
+
+
+def enumerate_translated_button_labels(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, List[str]]]:
+    yield from enumerate_translations(directory, languages, key="buttons")
+
+
+def enumerate_translated_news_buttons(
+    content: Content, directory: str, languages: List[str]
+) -> Iterator[NewsButton]:
+    translated_labels = list(enumerate_translated_button_labels(directory, languages))
+    for language, labels in translated_labels:
+        if len(labels) != len(content.buttons):
+            print(
+                f"Error: Mismatch in content button count and translation count "
+                f"in {directory} for language {language}: "
+                f"Expected {len(content.buttons)}, got {len(labels)}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    for i, content_button in enumerate(content.buttons):
+        yield NewsButton.from_content_button_and_translations(
+            content_button,
+            [(language, label[i]) for language, label in translated_labels],
+        )
 
 
 def ensure_translations(news_directory: str):
@@ -382,14 +439,19 @@ def ensure_translations(news_directory: str):
 def enumerate_news() -> Iterator[News]:
     for news_id, directory in enumerate_news_directories():
         meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
+        content_filepath = os.path.abspath(os.path.join(directory, CONTENT_FILENAME))
+        content = parse_content_markdown(content_filepath)
         languages = get_languages(meta)
         ensure_translations(directory)
         yield News(
             id=news_id,
             meta=meta,
-            banner=dict(list(enumerate_banners(directory, languages))),
-            title=dict(list(enumerate_titles(directory, languages))),
-            content=dict(list(enumerate_contents(directory, languages))),
+            banner=dict(list(enumerate_translated_banners(directory, languages))),
+            title=dict(list(enumerate_translated_titles(directory, languages))),
+            content=dict(list(enumerate_translated_contents(directory, languages))),
+            buttons=list(
+                enumerate_translated_news_buttons(content, directory, languages)
+            ),
         )
 
 
@@ -529,13 +591,64 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
         "banner_strings": banner_strings,
         "title": None,
         "content": None,
+        "buttons": [],
     }
     if lines and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[0])):
         result["banner_path"] = banner_match.group(1).strip()
     if len(lines) > 1 and (title_match := re.match(r"##? (.+)", lines[1])):
         result["title"] = title_match.group(1).strip()
     if len(lines) > 2:
-        result["content"] = "\n".join(lines[2:]).strip()
+        content_lines = []
+        is_button = False
+        is_button_aside = False
+        for line in lines[2:]:
+            if re.match(r"<!--\s+button\s+-->", line, re.IGNORECASE):
+                if is_button or is_button_aside:
+                    print("Error: Button comment without button", file=sys.stderr)
+                    sys.exit(1)
+                is_button = True
+                continue
+            if re.match(r"<!--\s+button\s+aside\s+-->", line, re.IGNORECASE):
+                if is_button or is_button_aside:
+                    print("Error: Aside button comment without button", file=sys.stderr)
+                    sys.exit(1)
+                is_button_aside = True
+                continue
+            if is_button or is_button_aside:
+                if len(line) == 0:
+                    continue
+                button_match = re.match(r"^\s*\[(.+)\]\((.+)\)\s*$", line)
+                if button_match is None:
+                    print(
+                        f"Error: Button comment not followed by a link: {line}",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                button_text = button_match.group(1).strip()
+                button_url = button_match.group(2).strip()
+                try:
+                    parsed_url = urllib.parse.urlparse(button_url)
+                    if parsed_url.scheme == "https":
+                        if not parsed_url.netloc:
+                            raise ValueError("Invalid URL")
+                    elif parsed_url.scheme == "mailto":
+                        if not parsed_url.path:
+                            raise ValueError("Invalid URL")
+                    else:
+                        raise ValueError("Invalid URL")
+                except Exception as e:
+                    print(f"Error: Invalid button URL: {button_url}", file=sys.stderr)
+                    sys.exit(1)
+                result["buttons"].append(
+                    ContentButton(
+                        aside=is_button_aside, label=button_text, url=button_url
+                    )
+                )
+                is_button = False
+                is_button_aside = False
+                continue
+            content_lines.append(line)
+        result["content"] = "\n".join(content_lines).strip()
     content = Content(**result)
     if content.title is None:
         print(f"Error: title is empty in {markdown_filepath}", file=sys.stderr)
@@ -593,6 +706,10 @@ def missing_banners(c: Context):
                     f"Missing banner for news {news_id} and language '{language}'",
                     file=sys.stderr,
                 )
+
+
+# TODO catch when calling dist with out of sync translations
+# TODO pre-commit hook for calling `inv translations`
 
 
 @task
