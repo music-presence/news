@@ -40,13 +40,13 @@ as your app translations in the About window of the app.
 
 ### Adding a new news entry
 
-1. Lock the [Weblate project](https://translate.codeberg.org/projects/music-presence/app-news/)
+1. Lock the [Weblate project](https://translate.codeberg.org/projects/music-presence/app-news/).
 2. Create a new directory in [news](./news)
-   with an ID 1 higher than the highest existing ID.
+   with an ID 1 higher than the highest existing ID
 3. Create `meta.json`, `content.md`, `banner/strings.txt` and `banner/en/image.png`.
-   Write the news entry (in English) until you are satisfied with it.
-4. Run `$ inv translations` to create translation files.
-   Run this task every time the news content is updated.
+   Write the news entry (in English) until you are satisfied with it
+4. Run `$ inv translations` to create translation files
+   Run this task every time the news content is updated
 5. Commit and push to GitHub, wait for the Weblate project to get the changes
 6. Update the Weblate project with the news ID (replace `{id}`):
    1. Manage > Settings > Files: Set "File mask" to `news/{id}/translations/*.json`
@@ -54,6 +54,16 @@ as your app translations in the About window of the app.
    3. Put a screenshot of the news entry (within the app) on all strings,
       to help translators see where each string is located
 7. Once everything looks good, unlock the Weblate project again
+
+### Publishing a news entry
+
+1. Lock the [Weblate project](https://translate.codeberg.org/projects/music-presence/app-news/)
+2. Check for any missing or **outdated** translations.
+   Due to using JSON for translation strings,
+   outdated strings are not automatically detected.
+   Either ask for correction or delete all outdated translations.
+   Ideally, only open translations when the news text is set in stone
+3. Run the `inv publish` task and lean back
 
 ## License
 
