@@ -870,3 +870,8 @@ def new(c: Context):
         shutil.rmtree(next_path)
     shutil.copytree(TEMPLATE_LOCATION, next_path)
     print(f"Created news entry with ID {next_id} at {os.path.relpath(next_path, PWD)}")
+
+
+@task
+def serve(c: Context, port: int = 3000):
+    run_command("python", "-m", "http.server", "-d", DIST_DIR, str(port))
