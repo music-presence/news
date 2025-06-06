@@ -65,6 +65,40 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "url",
+                "aside"
+              ],
+              "properties": {
+                "label": {
+                  "type": "object",
+                  "required": [
+                    "en"
+                  ],
+                  "propertyNames": {
+                    "$ref": "https://news.musicpresence.app/static/schemas/languages.schema.json"
+                  },
+                  "additionalProperties": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "aside": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
           }
         },
         "additionalProperties": false

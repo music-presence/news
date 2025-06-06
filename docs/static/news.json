@@ -16,7 +16,9 @@
       "title": {
         "de": "Dies ist ein Beispiel Nachrichten-Popup",
         "en": "This is an example news popup",
-        "it": "Questo \u00e8 un esempio di pop-up di notizie"
+        "it": "Questo \u00e8 un esempio di pop-up di notizie",
+        "ko": "\uc774\uac74 \ub274\uc2a4 \ud31d\uc5c5 \uc608\uc2dc\uc785\ub2c8\ub2e4",
+        "vi": "\u0110\u00e2y l\u00e0 m\u1ed9t v\u00ed d\u1ee5 v\u1ec1 c\u1eeda s\u1ed5 tin t\u1ee9c"
       },
       "banner": {
         "en": "https://news.musicpresence.app/static/news-assets/0/en/image.png"
@@ -24,8 +26,26 @@
       "content": {
         "de": "**Dies ist beispielhafter Nachrichten-Inhalt.**\n\nAchte darauf keine Bilder zu verwenden,\nschreibe lediglich Text und teile eine paar [Links](https://musicpresence.app).",
         "en": "**This is some news example content.**\n\nTry not to embed images here,\njust write text and share some [links](https://musicpresence.app).",
-        "it": "**Questo \u00e8 un esempio di contenuto di notizie.**\n\nProva a non incorporare immagini qui,\nscrivi solo del testo e condividi dei [link](https://musicpresence.app)."
-      }
+        "it": "**Questo \u00e8 un esempio di contenuto di notizie.**\n\nProva a non incorporare immagini qui,\nscrivi solo del testo e condividi dei [link](https://musicpresence.app).",
+        "ko": "**\uc77c\ubd80 \ub274\uc2a4 \uc608\uc2dc \ucf58\ud150\uce20\uc785\ub2c8\ub2e4.**\n\n\uc5ec\uae30\uc5d0 \uc774\ubbf8\uc9c0\ub97c \ub123\uc9c0 \ub9c8\uc138\uc694.\n\uadf8\ub0e5 \ud14d\uc2a4\ud2b8\ub97c \uc4f0\uace0 [\ub9c1\ud06c](https://musicpresence.app)\ub97c \uacf5\uc720\ud558\uc138\uc694.",
+        "vi": "**\u0110\u00e2y l\u00e0 v\u00e0i v\u00ed d\u1ee5 v\u1ec1 n\u1ed9i dung tin t\u1ee9c.**\n\nC\u1ed1 g\u1eafng \u0111\u1eebng ch\u00e8n \u1ea3nh t\u1ea1i \u0111\u00e2y,\nch\u1ec9 c\u1ea7n vi\u1ebft ch\u1eef v\u00e0 chia s\u1ebb [links](https://musicpresence.app)."
+      },
+      "buttons": [
+        {
+          "label": {
+            "en": "Donate"
+          },
+          "url": "https://donate.musicpresence.app",
+          "aside": false
+        },
+        {
+          "label": {
+            "en": "Contact the developer"
+          },
+          "url": "mailto:test@example.com",
+          "aside": true
+        }
+      ]
     }
   ]
 }
