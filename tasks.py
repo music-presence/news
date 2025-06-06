@@ -16,6 +16,7 @@ import shutil
 import copy
 import re
 import urllib.parse
+import subprocess
 
 import jsonschema
 import jsonschema.validators
@@ -807,3 +808,50 @@ def dist(c: Context):
         f.write(result)
     with open(os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.json"), "wt") as f:
         f.write(result_pretty)
+
+
+def run_command(*args):
+    subprocess.run(
+        list(args),
+        check=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        text=True,
+        bufsize=1,
+    )
+
+
+def get_command_output(*args):
+    return subprocess.run(
+        list(args),
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=sys.stderr,
+        text=True,
+    ).stdout
+
+
+@task
+def publish(c: Context, id: NewsId):
+    if len(get_command_output("git", "diff", "--cached")) > 0:
+        print(f"Error: Cannot publish with other staged changes", file=sys.stderr)
+        sys.exit(1)
+    news_path = os.path.join(NEWS_LOCATION, str(id))
+    if not os.path.exists(news_path):
+        print(f"Error: News with ID {id} does not exist", file=sys.stderr)
+        sys.exit(1)
+    meta_path = os.path.join(news_path, META_FILENAME)
+    if not os.path.exists(meta_path):
+        print(f"Error: No {META_FILENAME} for news with ID {id}", file=sys.stderr)
+        sys.exit(1)
+    with open(meta_path, "rt") as f:
+        meta = json.loads(f.read())
+    if meta["published"]:
+        print(f"News with ID {id} is already published")
+        sys.exit(0)
+    meta["published"] = True
+    with open(meta_path, "wt") as f:
+        f.write(json.dumps(meta, indent=2) + "\n")
+    run_command("git", "add", meta_path)
+    run_command("git", "commit", "-m", f"Publish news with ID {id}")
+    run_command("git", "push", "origin", "main")
