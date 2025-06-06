@@ -406,18 +406,30 @@ def enumerate_translated_news_buttons(
 ) -> Iterator[NewsButton]:
     translated_labels = list(enumerate_translated_button_labels(directory, languages))
     for language, labels in translated_labels:
-        if len(labels) != len(content.buttons):
+        # More labels are an error (there should not be more translations),
+        # but less is possible when no label after it is translated
+        # (that is how Weblate handles it).
+        if len(labels) > len(content.buttons):
             print(
                 f"Error: Mismatch in content button count and translation count "
                 f"in {directory} for language {language}: "
-                f"Expected {len(content.buttons)}, got {len(labels)}",
+                f"Expected {len(content.buttons)} or less, got {len(labels)}",
                 file=sys.stderr,
             )
             sys.exit(1)
     for i, content_button in enumerate(content.buttons):
         yield NewsButton.from_content_button_and_translations(
             content_button,
-            [(language, label[i]) for language, label in translated_labels],
+            [
+                (language, label[i])
+                for language, label in translated_labels
+                # There can be less labels, see the comment above.
+                if i < len(label)
+                # A translated label can be None/null when it has not been
+                # translated yet, but e.g. a string after it is translated
+                # (that is how Weblate handles it).
+                if label[i] is not None and len(label[i]) > 0
+            ],
         )
 
 
