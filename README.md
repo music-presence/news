@@ -21,11 +21,12 @@ Before starting, keep the following in mind:
   as these texts are the first that users read,
   when they see a news popup.
   Translating these is quick and is more than enough.
+  Please always translate them together, not just one of them.
 - If you want to go the extra mile and translate the entire news text,
   then you are more than welcome to do so.
   Please try your best to match the tone of the original news entry.
   Also, please only translate if you are confident in your translating
-  of continuous text (rather than individual words).
+  of continuous text (rather than individual words or sentences).
   If you feel like your translation would not match the original,
   it is okay to leave the news text untranslated.
 - Thank you for contributing!
