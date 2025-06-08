@@ -163,6 +163,7 @@ class Content:
     banner_strings: str
     content: str
     buttons: List[ContentButton]
+    urgent: Optional[str]
 
 
 @dataclass
@@ -171,6 +172,7 @@ class Translation:
     banner: str
     content: str
     buttons: List[str]
+    urgent: Optional[str]
 
     @classmethod
     def from_content(cls, content: Content):
@@ -179,6 +181,7 @@ class Translation:
             banner=content.banner_strings,
             content=content.content,
             buttons=[button.label for button in content.buttons],
+            urgent=content.urgent,
         )
 
 
@@ -209,6 +212,7 @@ class News:
     banner: Dict[LanguageCode, str]
     content: Dict[LanguageCode, str]
     buttons: List[NewsButton]
+    urgent: Optional[Dict[LanguageCode, str]]
 
     @classmethod
     def create(
@@ -228,12 +232,17 @@ class News:
             buttons=list(
                 enumerate_translated_news_buttons(content, directory, languages)
             ),
+            urgent=dict(list(enumerate_translated_urgent_texts(directory, languages))),
         )
         banner_strings = dict(
             list(enumerate_translations(directory, languages, "banner"))
         )
         check_translation(id, "title", content.title, result.title)
         check_translation(id, "content", content.content, result.content)
+        if len(result.urgent) > 0:
+            check_translation(id, "urgent", content.urgent, result.urgent)
+        else:
+            result.urgent = None
         check_translation(id, "banner", content.banner_strings, banner_strings)
         if len(result.buttons) != len(content.buttons):
             print(
@@ -456,6 +465,12 @@ def enumerate_translated_titles(
     yield from enumerate_translations(directory, languages, key="title")
 
 
+def enumerate_translated_urgent_texts(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_translations(directory, languages, key="urgent")
+
+
 def enumerate_translated_contents(
     directory: str, languages: List[str]
 ) -> Iterator[Tuple[LanguageCode, str]]:
@@ -668,6 +683,7 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
         "title": None,
         "content": None,
         "buttons": [],
+        "urgent": None,
     }
     if lines and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[0])):
         result["banner_path"] = banner_match.group(1).strip()
@@ -677,18 +693,26 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
         content_lines = []
         is_button = False
         is_button_aside = False
+        is_urgent_text = False
         for line in lines[2:]:
-            if re.match(r"<!--\s+button\s+-->", line, re.IGNORECASE):
-                if is_button or is_button_aside:
-                    print("Error: Button comment without button", file=sys.stderr)
+            if re.match(r"\s*<!--\s+button\s+-->\s*", line, re.IGNORECASE):
+                if is_button or is_button_aside or is_urgent_text:
+                    print(f"Error: Unexpected comment: {line}", file=sys.stderr)
                     sys.exit(1)
                 is_button = True
                 continue
-            if re.match(r"<!--\s+button\s+aside\s+-->", line, re.IGNORECASE):
-                if is_button or is_button_aside:
-                    print("Error: Aside button comment without button", file=sys.stderr)
+            if re.match(r"\s*<!--\s+button\s+aside\s+-->\s*", line, re.IGNORECASE):
+                if is_button or is_button_aside or is_urgent_text:
+                    print(f"Error: Unexpected comment: {line}", file=sys.stderr)
                     sys.exit(1)
                 is_button_aside = True
+                continue
+            if re.match(r"\s*<!--\s+urgent\s+-->\s*", line, re.IGNORECASE):
+                if is_button or is_button_aside or is_urgent_text:
+                    print(f"Error: Unexpected comment: {line}", file=sys.stderr)
+                    sys.exit(1)
+                is_urgent_text = True
+                result["urgent"] = ""
                 continue
             if is_button or is_button_aside:
                 if len(line) == 0:
@@ -723,8 +747,16 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
                 is_button = False
                 is_button_aside = False
                 continue
+            if is_urgent_text:
+                result["urgent"] += line + "\n"
+                continue
             content_lines.append(line)
         result["content"] = "\n".join(content_lines).strip()
+    if result["urgent"] is not None:
+        result["urgent"] = result["urgent"].strip()
+        if len(result["urgent"]) == 0:
+            print(f"Error: Urgent text cannot be empty", file=sys.stderr)
+            sys.exit(1)
     content = Content(**result)
     if content.title is None:
         print(f"Error: title is empty in {markdown_filepath}", file=sys.stderr)
@@ -782,9 +814,6 @@ def missing_banners(c: Context):
                     f"Missing banner for news {news_id} and language '{language}'",
                     file=sys.stderr,
                 )
-
-
-# TODO pre-commit hook for calling `inv translations`
 
 
 @task
