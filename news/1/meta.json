@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/meta.schema.json",
+  "published": true,
+  "startTime": "2025-06-04T12:00:00.022Z",
+  "endTime": "2099-06-05T12:00:00.320Z",
+  "filters": {
+    "languages": [
+      "en"
+    ],
+    "operatingSystems": [
+      "linux",
+      "windows",
+      "mac"
+    ]
+  }
+}
