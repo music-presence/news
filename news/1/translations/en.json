@@ -1,9 +1,0 @@
-{
-    "title": "News",
-    "banner": "Write the text that appears in the banner here",
-    "content": "Write your news entry.",
-    "buttons": [
-        "Button 1",
-        "Button 2"
-    ]
-}
