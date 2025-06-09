@@ -16,7 +16,6 @@
         "required": [
           "id",
           "meta",
-          "title",
           "content"
         ],
         "properties": {

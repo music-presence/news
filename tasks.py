@@ -158,7 +158,7 @@ class ContentButton:
 
 @dataclass
 class Content:
-    title: str
+    title: Optional[str]
     banner_path: str
     banner_strings: str
     content: str
@@ -168,7 +168,7 @@ class Content:
 
 @dataclass
 class Translation:
-    title: str
+    title: Optional[str]
     banner: str
     content: str
     buttons: List[str]
@@ -237,7 +237,10 @@ class News:
         banner_strings = dict(
             list(enumerate_translations(directory, languages, "banner"))
         )
-        check_translation(id, "title", content.title, result.title)
+        if len(result.title) > 0:
+            check_translation(id, "title", content.title, result.title)
+        else:
+            result.title = None
         check_translation(id, "content", content.content, result.content)
         if len(result.urgent) > 0:
             check_translation(id, "urgent", content.urgent, result.urgent)
@@ -685,16 +688,19 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
         "buttons": [],
         "urgent": None,
     }
-    if lines and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[0])):
+    i = 0
+    if len(lines) > i and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[i])):
         result["banner_path"] = banner_match.group(1).strip()
-    if len(lines) > 1 and (title_match := re.match(r"##? (.+)", lines[1])):
+        i += 1
+    if len(lines) > i and (title_match := re.match(r"#\s*(.+)", lines[i])):
         result["title"] = title_match.group(1).strip()
-    if len(lines) > 2:
+        i += 1
+    if len(lines) > i:
         content_lines = []
         is_button = False
         is_button_aside = False
         is_urgent_text = False
-        for line in lines[2:]:
+        for line in lines[i:]:
             if re.match(r"\s*<!--\s+button\s+-->\s*", line, re.IGNORECASE):
                 if is_button or is_button_aside or is_urgent_text:
                     print(f"Error: Unexpected comment: {line}", file=sys.stderr)
@@ -758,9 +764,6 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
             print(f"Error: Urgent text cannot be empty", file=sys.stderr)
             sys.exit(1)
     content = Content(**result)
-    if content.title is None:
-        print(f"Error: title is empty in {markdown_filepath}", file=sys.stderr)
-        sys.exit(1)
     if content.content is None:
         print(f"Error: content is empty in {markdown_filepath}", file=sys.stderr)
         sys.exit(1)
