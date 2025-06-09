@@ -692,15 +692,24 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
     if len(lines) > i and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[i])):
         result["banner_path"] = banner_match.group(1).strip()
         i += 1
-    if len(lines) > i and (title_match := re.match(r"#\s*(.+)", lines[i])):
+    if len(lines) > i and (title_match := re.match(r"#\s*([^#].*)", lines[i])):
         result["title"] = title_match.group(1).strip()
         i += 1
-    if len(lines) > i:
+    lines = lines[i:]
+    while len(lines) > 0 and len(lines[0]) == 0:
+        lines = lines[1:]
+    if len(lines) > 0:
+        if re.match(r"^#+.*$", lines[0]):
+            print(
+                f"Error: Content cannot start with a header: {lines[0]}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         content_lines = []
         is_button = False
         is_button_aside = False
         is_urgent_text = False
-        for line in lines[i:]:
+        for line in lines:
             if re.match(r"\s*<!--\s+button\s+-->\s*", line, re.IGNORECASE):
                 if is_button or is_button_aside or is_urgent_text:
                     print(f"Error: Unexpected comment: {line}", file=sys.stderr)
