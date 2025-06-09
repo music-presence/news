@@ -452,27 +452,37 @@ def enumerate_translated_banners(
     )
 
 
+def load_translation(translations_dir: str, language: str, key: str) -> Optional[str]:
+    filepath = os.path.join(translations_dir, f"{language}.json")
+    if not os.path.exists(filepath):
+        print(f"Skipping {filepath}: Language does not exist", file=sys.stderr)
+        return None
+    try:
+        with open(filepath, "rt", encoding="utf-8") as f:
+            data = json.loads(f.read())
+    except Exception as e:
+        print(
+            f"Error: Failed to load translation {filepath}: {e}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if not key in data or len(str(data[key])) == 0:
+        return None
+    return data[key]
+
+
 def enumerate_translations(
     directory: str, languages: List[str], key: str
 ) -> Iterator[Tuple[LanguageCode, Any]]:
     translations_dir = os.path.join(directory, TRANSLATIONS_DIR)
+    default_translation = load_translation(translations_dir, DEFAULT_LANGUAGE_CODE, key)
+    if default_translation is None:
+        return
     for language in languages:
-        filepath = os.path.join(translations_dir, f"{language}.json")
-        if not os.path.exists(filepath):
-            print(f"Skipping {filepath}: Language does not exist", file=sys.stderr)
+        translation = load_translation(translations_dir, language, key)
+        if translation is None:
             continue
-        try:
-            with open(filepath, "rt", encoding="utf-8") as f:
-                data = json.loads(f.read())
-        except Exception as e:
-            print(
-                f"Error: Failed to load translation {filepath}: {e}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        if not key in data or len(str(data[key])) == 0:
-            continue
-        yield (language, data[key])
+        yield (language, translation)
 
 
 def enumerate_translated_titles(
