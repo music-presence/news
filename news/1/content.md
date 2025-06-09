@@ -1,6 +1,6 @@
 ![](./banner/en/image.png)
 
-# News
+## Short title
 
 Write your news entry.
 

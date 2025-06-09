@@ -16,6 +16,7 @@
         "required": [
           "id",
           "meta",
+          "shortTitle",
           "content"
         ],
         "properties": {
@@ -27,6 +28,19 @@
             "$ref": "meta.schema.json"
           },
           "title": {
+            "type": "object",
+            "required": [
+              "en"
+            ],
+            "propertyNames": {
+              "$ref": "languages.schema.json"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "shortTitle": {
             "type": "object",
             "required": [
               "en"

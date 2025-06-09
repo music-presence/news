@@ -159,6 +159,7 @@ class ContentButton:
 @dataclass
 class Content:
     title: Optional[str]
+    short_title: str
     banner_path: str
     banner_strings: str
     content: str
@@ -169,6 +170,7 @@ class Content:
 @dataclass
 class Translation:
     title: Optional[str]
+    short_title: str
     banner: str
     content: str
     buttons: List[str]
@@ -178,6 +180,7 @@ class Translation:
     def from_content(cls, content: Content):
         return Translation(
             title=content.title,
+            short_title=content.short_title,
             banner=content.banner_strings,
             content=content.content,
             buttons=[button.label for button in content.buttons],
@@ -209,6 +212,7 @@ class News:
     id: NewsId
     meta: Meta
     title: Dict[LanguageCode, str]
+    short_title: Dict[LanguageCode, str]
     banner: Dict[LanguageCode, str]
     content: Dict[LanguageCode, str]
     buttons: List[NewsButton]
@@ -228,6 +232,9 @@ class News:
             meta=meta,
             banner=dict(list(enumerate_translated_banners(directory, languages))),
             title=dict(list(enumerate_translated_titles(directory, languages))),
+            short_title=dict(
+                list(enumerate_translated_short_titles(directory, languages))
+            ),
             content=dict(list(enumerate_translated_contents(directory, languages))),
             buttons=list(
                 enumerate_translated_news_buttons(content, directory, languages)
@@ -468,6 +475,12 @@ def enumerate_translated_titles(
     yield from enumerate_translations(directory, languages, key="title")
 
 
+def enumerate_translated_short_titles(
+    directory: str, languages: List[str]
+) -> Iterator[Tuple[LanguageCode, str]]:
+    yield from enumerate_translations(directory, languages, key="shortTitle")
+
+
 def enumerate_translated_urgent_texts(
     directory: str, languages: List[str]
 ) -> Iterator[Tuple[LanguageCode, str]]:
@@ -660,6 +673,12 @@ def read_banner_strings(directory: str) -> str:
     return banner_strings
 
 
+def prune_empty_lines(lines: List[str]) -> List[str]:
+    while len(lines) > 0 and len(lines[0]) == 0:
+        lines = lines[1:]
+    return lines
+
+
 def parse_content_markdown(markdown_filepath: str) -> Content:
     banner_strings = read_banner_strings(os.path.dirname(markdown_filepath))
     try:
@@ -684,20 +703,21 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
         "banner_path": None,
         "banner_strings": banner_strings,
         "title": None,
+        "short_title": None,
         "content": None,
         "buttons": [],
         "urgent": None,
     }
-    i = 0
-    if len(lines) > i and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[i])):
+    lines = prune_empty_lines(lines)
+    if len(lines) > 0 and (banner_match := re.match(r"!\[.*\]\((.+)\)", lines[0])):
         result["banner_path"] = banner_match.group(1).strip()
-        i += 1
-    if len(lines) > i and (title_match := re.match(r"#\s*([^#].*)", lines[i])):
+        lines = prune_empty_lines(lines[1:])
+    if len(lines) > 0 and (title_match := re.match(r"#\s*([^#].*)", lines[0])):
         result["title"] = title_match.group(1).strip()
-        i += 1
-    lines = lines[i:]
-    while len(lines) > 0 and len(lines[0]) == 0:
-        lines = lines[1:]
+        lines = prune_empty_lines(lines[1:])
+    if len(lines) > 0 and (title_match := re.match(r"##\s*([^#].*)", lines[0])):
+        result["short_title"] = title_match.group(1).strip()
+        lines = prune_empty_lines(lines[1:])
     if len(lines) > 0:
         if re.match(r"^#+.*$", lines[0]):
             print(
@@ -773,6 +793,9 @@ def parse_content_markdown(markdown_filepath: str) -> Content:
             print(f"Error: Urgent text cannot be empty", file=sys.stderr)
             sys.exit(1)
     content = Content(**result)
+    if content.short_title is None:
+        print(f"Error: short title is empty in {markdown_filepath}", file=sys.stderr)
+        sys.exit(1)
     if content.content is None:
         print(f"Error: content is empty in {markdown_filepath}", file=sys.stderr)
         sys.exit(1)

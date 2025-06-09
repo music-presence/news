@@ -2,6 +2,8 @@
 
 # This is an example news popup
 
+## This is the short title
+
 **This is some news example content.**
 
 Try not to embed images here,

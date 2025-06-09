@@ -15,13 +15,16 @@ by following these instructions:
    Once you were invited to the project, you should able to translate right away.
 
 Before starting, keep the following in mind:
-- Translations of the "banner" and "title" keys
+- Translations of the "banner", "title" and "short_title" keys
   are the most important
-  (search for "Key" on the page of a translation string),
+  (look for "Key" on the page of a translation string to find its key),
   as these texts are the first that users read,
   when they see a news popup.
   Translating these is quick and is more than enough.
   Please always translate them together, not just one of them.
+- Make sure that the translated "short_title"
+  is not longer than the original text.
+  This stirng will be shown in the tray menu and has limited space.
 - If you want to go the extra mile and translate the entire news text,
   then you are more than welcome to do so.
   Please try your best to match the tone of the original news entry.
