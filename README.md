@@ -66,6 +66,11 @@ as your app translations in the About window of the app.
    Either ask for correction or delete all outdated translations.
    Ideally, only open translations when the news text is set in stone
 3. Run the `inv publish` task and lean back
+4. Do note that once a news entry is published,
+   it is okay to unpublish it again and delete it,
+   but its news ID should not be reused for a new news entry,
+   as it may already have been shown to users
+   and therefore may not be shown again.
 
 ## License
 
