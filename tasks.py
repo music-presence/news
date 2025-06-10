@@ -54,7 +54,7 @@ def read_schema_validator(
     schema_location: str,
 ) -> Tuple[JsonDict, jsonschema.Validator]:
     try:
-        with open(schema_location) as f:
+        with open(schema_location, encoding="utf-8") as f:
             schema = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(
@@ -335,7 +335,7 @@ def read_file_contents(path: str) -> str:
         print(f"Error: {path} does not exist", file=sys.stderr)
         sys.exit(1)
     try:
-        with open(path, "rt") as file:
+        with open(path, "rt", encoding="utf-8") as file:
             return file.read()
     except Exception as e:
         print(f"Error: Failed to read file {path}: {e}", file=sys.stderr)
@@ -383,7 +383,7 @@ def read_news_meta(
         print(f"Error: {META_FILENAME} not found in {directory}", file=sys.stderr)
         sys.exit(1)
     try:
-        with open(meta_path) as f:
+        with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON in {meta_path}: {e}", file=sys.stderr)
@@ -456,7 +456,7 @@ def enumerate_translations(
             print(f"Skipping {filepath}: Language does not exist", file=sys.stderr)
             continue
         try:
-            with open(filepath, "rt") as f:
+            with open(filepath, "rt", encoding="utf-8") as f:
                 data = json.loads(f.read())
         except Exception as e:
             print(
@@ -633,7 +633,7 @@ def export_schema(schema_validator: jsonschema.Validator, filename: str):
     )
     target_directory = os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "schemas")
     pathlib.Path(target_directory).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(target_directory, filename), "wt") as f:
+    with open(os.path.join(target_directory, filename), "wt", encoding="utf-8") as f:
         f.write(json.dumps(schema, indent=2))
 
 
@@ -662,7 +662,7 @@ def read_banner_strings(directory: str) -> str:
         )
         sys.exit(1)
     try:
-        with open(banner_strings_filepath, "rt") as f:
+        with open(banner_strings_filepath, "rt", encoding="utf-8") as f:
             banner_strings = f.read().strip()
     except Exception as e:
         print(
@@ -682,7 +682,7 @@ def prune_empty_lines(lines: List[str]) -> List[str]:
 def parse_content_markdown(markdown_filepath: str) -> Content:
     banner_strings = read_banner_strings(os.path.dirname(markdown_filepath))
     try:
-        with open(markdown_filepath, "rt") as f:
+        with open(markdown_filepath, "rt", encoding="utf-8") as f:
             markdown_text = f.read()
     except Exception as e:
         print(
@@ -829,7 +829,7 @@ def translations(c: Context):
                 if os.path.exists(language_filepath):
                     os.unlink(language_filepath)
             if not os.path.exists(language_filepath):
-                with open(language_filepath, "wt") as f:
+                with open(language_filepath, "wt", encoding="utf-8") as f:
                     f.write(to_write)
                 print(
                     f"Created {os.path.relpath(language_filepath, PWD)}",
@@ -870,9 +870,17 @@ def dist(c: Context):
     except Exception as e:
         print(f"Error: Failed to validate generated news: {e}", file=sys.stderr)
         sys.exit(1)
-    with open(os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.min.json"), "wt") as f:
+    with open(
+        os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.min.json"),
+        "wt",
+        encoding="utf-8",
+    ) as f:
         f.write(result)
-    with open(os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.json"), "wt") as f:
+    with open(
+        os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.json"),
+        "wt",
+        encoding="utf-8",
+    ) as f:
         f.write(result_pretty)
 
 
@@ -910,13 +918,13 @@ def publish(c: Context, id: NewsId):
     if not os.path.exists(meta_path):
         print(f"Error: No {META_FILENAME} for news with ID {id}", file=sys.stderr)
         sys.exit(1)
-    with open(meta_path, "rt") as f:
+    with open(meta_path, "rt", encoding="utf-8") as f:
         meta = json.loads(f.read())
     if meta["published"]:
         print(f"News with ID {id} is already published")
         sys.exit(0)
     meta["published"] = True
-    with open(meta_path, "wt") as f:
+    with open(meta_path, "wt", encoding="utf-8") as f:
         f.write(json.dumps(meta, indent=2) + "\n")
     run_command("git", "add", meta_path)
     run_command("git", "add", news_path)
