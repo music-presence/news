@@ -144,6 +144,7 @@ class Filters:
 @dataclass
 class Meta:
     published: bool
+    popup: bool
     start_time: Optional[datetime.datetime]
     end_time: Optional[datetime.datetime]
     filters: Optional[Filters]
@@ -327,6 +328,7 @@ def dict_to_meta(data: JsonDict) -> Meta:
         end_time=end_time,
         filters=filters,
         published=data["published"],
+        popup=data["popup"],
     )
 
 

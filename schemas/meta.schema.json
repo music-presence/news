@@ -2,13 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "required": [
-    "published"
+    "published",
+    "popup"
   ],
   "properties": {
     "$schema": {
       "type": "string"
     },
     "published": {
+      "type": "boolean"
+    },
+    "popup": {
       "type": "boolean"
     },
     "startTime": {
