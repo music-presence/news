@@ -32,6 +32,10 @@ STATIC_DIR = "static"
 STATIC_LOCATION = os.path.abspath(os.path.join(PWD, STATIC_DIR))
 DIST_DIR = "dist"
 DIST_LOCATION = os.path.abspath(os.path.join(PWD, DIST_DIR))
+DIST_OUT_VERSION = 1
+EXPORT_ROOT_DIR = f"v{DIST_OUT_VERSION}"
+DIST_OUT_DIR = os.path.join(DIST_DIR, EXPORT_ROOT_DIR)
+DIST_OUT_LOCATION = os.path.abspath(os.path.join(PWD, DIST_OUT_DIR))
 DIST_STATIC_DIR = "static"
 DIST_STATIC_ASSETS_DIR = "news-assets"
 NEWS_DIR = "news"
@@ -580,7 +584,7 @@ def export_to_dist(source_path: str, target_relative_path: str) -> None:
         print(f"Error: Failed to export: {source_path} does not exist", file=sys.stderr)
         sys.exit(1)
     target_path = os.path.abspath(
-        os.path.join(DIST_LOCATION, DIST_STATIC_DIR, target_relative_path)
+        os.path.join(DIST_OUT_LOCATION, DIST_STATIC_DIR, target_relative_path)
     )
     if os.path.exists(target_path):
         print(f"Error: Failed to export: {target_path} already exists", file=sys.stderr)
@@ -598,7 +602,7 @@ def export_to_dist(source_path: str, target_relative_path: str) -> None:
 
 
 def url_for_dist_file(relative_path: str) -> str:
-    return f"{URL_PROTOCOL}://{URL_DOMAIN}/{DIST_STATIC_DIR}/{relative_path}"
+    return f"{URL_PROTOCOL}://{URL_DOMAIN}/{EXPORT_ROOT_DIR}/{DIST_STATIC_DIR}/{relative_path}"
 
 
 def enumerate_exported_news():
@@ -633,7 +637,7 @@ def export_schema(schema_validator: jsonschema.Validator, filename: str):
     deep_walk_and_replace(
         schema, ref_replacer=lambda ref: url_for_dist_file(f"schemas/{ref}")
     )
-    target_directory = os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "schemas")
+    target_directory = os.path.join(DIST_OUT_LOCATION, DIST_STATIC_DIR, "schemas")
     pathlib.Path(target_directory).mkdir(parents=True, exist_ok=True)
     with open(os.path.join(target_directory, filename), "wt", encoding="utf-8") as f:
         f.write(json.dumps(schema, indent=2))
@@ -873,13 +877,13 @@ def dist(c: Context):
         print(f"Error: Failed to validate generated news: {e}", file=sys.stderr)
         sys.exit(1)
     with open(
-        os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.min.json"),
+        os.path.join(DIST_OUT_LOCATION, DIST_STATIC_DIR, "news.min.json"),
         "wt",
         encoding="utf-8",
     ) as f:
         f.write(result)
     with open(
-        os.path.join(DIST_LOCATION, DIST_STATIC_DIR, "news.json"),
+        os.path.join(DIST_OUT_LOCATION, DIST_STATIC_DIR, "news.json"),
         "wt",
         encoding="utf-8",
     ) as f:
