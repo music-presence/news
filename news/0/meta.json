@@ -3,7 +3,7 @@
   "published": true,
   "popup": true,
   "startTime": "2025-06-04T12:00:00.022Z",
-  "endTime": "2025-06-05T12:00:00.320Z",
+  "endTime": "2099-06-20T12:00:00.320Z",
   "filters": {
     "operatingSystems": [
       "linux",
