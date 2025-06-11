@@ -2,12 +2,6 @@
   "$schema": "../../schemas/meta.schema.json",
   "published": true,
   "popup": true,
-  "startTime": "2025-06-04T12:00:00.022Z",
-  "endTime": "2099-06-20T12:00:00.320Z",
-  "filters": {
-    "operatingSystems": [
-      "linux",
-      "windows"
-    ]
-  }
+  "startTime": "2025-06-11T18:00:00.000Z",
+  "endTime": "2099-06-11T22:00:00.000Z"
 }
