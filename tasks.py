@@ -365,7 +365,7 @@ def get_all_languages() -> List[str]:
 
 def get_languages(meta: Meta) -> List[str]:
     if meta.filters is not None and meta.filters.languages is not None:
-        return meta.filters.languages
+        return meta.filters.languages + [DEFAULT_LANGUAGE_CODE]
     return get_all_languages()
 
 
