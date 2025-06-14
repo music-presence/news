@@ -42,6 +42,13 @@ as your app translations in the About window of the app.
 
 ## Maintenance
 
+### Setup
+
+1. `python3 -m venv .venv`
+2. `source .venv/bin/activate`
+3. `pip install -r requirements.txt`
+4. `pre-commit install`
+
 ### Adding a new news entry
 
 1. Lock the [Weblate project](https://translate.codeberg.org/projects/music-presence/app-news/).
