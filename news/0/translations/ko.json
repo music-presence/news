@@ -1,9 +1,0 @@
-{
-    "banner": "내부 재작업\n그리고 macOS 15.4 수정\nMusic Presence - 버전 2.3.0",
-    "title": "이건 뉴스 팝업 예시입니다",
-    "content": "**일부 뉴스 예시 콘텐츠입니다.**\n\n여기에 이미지를 넣지 마세요.\n그냥 텍스트를 쓰고 [링크](https://musicpresence.app)를 공유하세요.",
-    "buttons": [
-        "기부",
-        "개발자에게 연락"
-    ]
-}
