@@ -3,3 +3,4 @@ venv
 dist
 news-test
 news/*/notes
+notes
