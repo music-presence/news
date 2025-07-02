@@ -174,24 +174,34 @@ class Content:
     urgent: Optional[str]
 
 
+def replace_todo_translation(translation: str | None) -> str | None:
+    if translation is None or translation.upper() == "TODO":
+        return None
+    return translation
+
+
 @dataclass
 class Translation:
     title: Optional[str]
-    short_title: str
-    banner: str
-    content: str
-    buttons: List[str]
+    short_title: Optional[str]
+    banner: Optional[str]
+    content: Optional[str]
+    buttons: Optional[List[str]]
     urgent: Optional[str]
 
     @classmethod
     def from_content(cls, content: Content):
         return Translation(
-            title=content.title,
-            short_title=content.short_title,
-            banner=content.banner_strings,
-            content=content.content,
-            buttons=[button.label for button in content.buttons],
-            urgent=content.urgent,
+            title=replace_todo_translation(content.title),
+            short_title=replace_todo_translation(content.short_title),
+            banner=replace_todo_translation(content.banner_strings),
+            content=replace_todo_translation(content.content),
+            buttons=(
+                [button.label for button in content.buttons]
+                if len(content.buttons) > 0
+                else None
+            ),
+            urgent=replace_todo_translation(content.urgent),
         )
 
 
