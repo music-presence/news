@@ -614,6 +614,10 @@ def export_to_dist(source_path: str, target_relative_path: str) -> None:
 
 
 def url_for_dist_file(relative_path: str) -> str:
+    if os.getenv("LOCALHOST") == "1":
+        return (
+            f"http://127.0.0.1:3000/{EXPORT_ROOT_DIR}/{DIST_STATIC_DIR}/{relative_path}"
+        )
     return f"{URL_PROTOCOL}://{URL_DOMAIN}/{EXPORT_ROOT_DIR}/{DIST_STATIC_DIR}/{relative_path}"
 
 
