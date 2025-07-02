@@ -2,3 +2,4 @@ venv
 .venv
 dist
 news-test
+news/*/notes
