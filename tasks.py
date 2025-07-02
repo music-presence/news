@@ -11,6 +11,7 @@ import functools
 import json
 import pathlib
 import os
+import glob
 import sys
 import shutil
 import copy
@@ -21,6 +22,7 @@ import subprocess
 import jsonschema
 import jsonschema.validators
 import referencing
+from PIL import Image
 
 
 NewsId = int
@@ -963,3 +965,27 @@ def new(c: Context):
 @task
 def serve(c: Context, port: int = 3000):
     run_command("python", "-m", "http.server", "-d", DIST_DIR, str(port))
+
+
+def resize_image(image_path):
+    try:
+        print(image_path)
+        image = Image.open(image_path)
+        width, height = image.size
+        if width / height != 7 / 2:
+            print(f"Error: {image_path} has an incorrect aspect ratio")
+            return
+        if width == 700 and height == 200:
+            return
+        resized_image = image.resize((700, 200))
+        resized_image.save(image_path)
+        print(f"Resized: {image_path}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+@task
+def resize_banners(c: Context):
+    for extension in ("*.png", "*.jpg", "*.jpeg"):
+        for image_path in glob.glob(f"news/*/banner/*/{extension}", recursive=True):
+            resize_image(os.path.abspath(image_path))
