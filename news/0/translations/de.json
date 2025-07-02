@@ -4,7 +4,7 @@
     "banner": "Interne Überarbeitung\nund macOS 15.4 fix\nMusic Presence - Version 2.3.0",
     "content": "**Dies ist beispielhafter Nachrichten-Inhalt.**\n\nAchte darauf keine Bilder zu verwenden,\nschreibe lediglich Text und teile eine paar [Links](https://musicpresence.app).",
     "buttons": [
-        null,
+        "Spenden",
         "Kontaktiere den Entwickler"
     ]
 }
