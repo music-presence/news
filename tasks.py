@@ -989,3 +989,18 @@ def resize_banners(c: Context):
     for extension in ("*.png", "*.jpg", "*.jpeg"):
         for image_path in glob.glob(f"news/*/banner/*/{extension}", recursive=True):
             resize_image(os.path.abspath(image_path))
+
+
+@task
+def check_not_published(c: Context):
+    for news_id, directory in enumerate_news_directories():
+        meta = read_news_meta(directory, META_VALIDATOR, META_SCHEMA_LOCATION)
+        if meta.published:
+            l1 = f"WARNING News with ID {news_id} is published!"
+            l2 = f"WARNING Pushing these changes will show these news to users."
+            ll = max(len(l1), len(l2))
+            ex = "!" * (ll + 3 + 3)
+            print(ex, file=sys.stderr)
+            print("!! " + l1 + " " * (ll - len(l1)) + " !!", file=sys.stderr)
+            print("!! " + l2 + " " * (ll - len(l2)) + " !!", file=sys.stderr)
+            print(ex, file=sys.stderr)

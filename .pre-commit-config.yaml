@@ -19,3 +19,12 @@ repos:
       language: python
       pass_filenames: false
       additional_dependencies: [packaging]
+  - repo: local
+    hooks:
+    - id: check-not-published
+      name: Check that no news are published
+      entry: invoke check-not-published
+      language: python
+      pass_filenames: false
+      additional_dependencies: [packaging]
+      verbose: true
