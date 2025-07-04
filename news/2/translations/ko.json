@@ -1,3 +1,10 @@
 {
-    "banner": "Music Presence를 <em>풀타임</em>으로 개발할 수 있도록 도와주세요\n\nlast.fm 스크로블링\n9월\n\n브라우저 지원\n10월\n\n함께 음악 듣기\n1월"
+    "banner": "Music Presence를 <em>풀타임</em>으로 개발할 수 있도록 도와주세요\n\nlast.fm 스크로블링\n9월\n\n브라우저 지원\n10월\n\n함께 음악 듣기\n1월",
+    "shortTitle": "Music Presence는 여러분의 도움이 필요합니다",
+    "buttons": [
+        "연락하기",
+        "번역하기",
+        "웹사이트 방문하기",
+        "기부하기"
+    ]
 }
