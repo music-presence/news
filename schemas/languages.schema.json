@@ -4,6 +4,8 @@
   "enum": [
     "af",
     "ar",
+    "bg",
+    "bs",
     "cs",
     "de",
     "en",
@@ -23,8 +25,11 @@
     "ro",
     "ru",
     "sk",
+    "sr",
+    "th",
     "uk",
     "vi",
+    "zh-CN",
     "zh-TW"
   ]
 }
