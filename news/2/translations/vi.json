@@ -1,3 +1,10 @@
 {
-    "banner": "Giúp tôi phát triển Music Presence <em>toàn thời gian</em>\n\nscrobble trên last.fm\ntháng chín\n\nhỗ trợ cho trình duyệt\ntháng mười\n\nnghe cùng bạn bè\ntháng một"
+    "banner": "Giúp tôi phát triển Music Presence <em>toàn thời gian</em>\n\nscrobble trên last.fm\ntháng chín\n\nhỗ trợ cho trình duyệt\ntháng mười\n\nnghe cùng bạn bè\ntháng một",
+    "shortTitle": "Music Presence cần bạn giúp",
+    "buttons": [
+        "Liên hệ",
+        "Phiên dịch",
+        "Truy cập website",
+        "Quyên góp"
+    ]
 }
