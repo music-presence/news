@@ -118,10 +118,10 @@ Thank you for reading this far. ❤️
 #### Links
 
 - [Donation goal and progress](https://musicpresence.app)
-- [View all my sponsors](musicpresence.app/sponsors)
-- [Project timeline](musicpresence.app#timeline)
-- [Donation options](musicpresence.app/donate)
-- [Kind comments from users](musicpresence.app#references)
+- [View all my sponsors](https://musicpresence.app/sponsors)
+- [Project timeline](https://musicpresence.app#timeline)
+- [Donation options](https://musicpresence.app/donate)
+- [Kind comments from users](https://musicpresence.app#references)
 - [Join the Discord server](https://discord-invite.musicpresence.app)
 - [Contact me](mailto:contact@musicpresence.app)
 
