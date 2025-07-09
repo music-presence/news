@@ -6,13 +6,17 @@
 
 I have published Music Presence on
 [**peerlist.io**](https://peerlist.io/ungive/project/music-presence),
-a weekly leaderboard for aspiring software projects
-and I want to get the app to reach the **very top** this week! If you are using my app daily, just 5 minutes of your time would help immensely! The voting Window closes on Sunday.
+a weekly leaderboard for aspiring software projects.
+This is a great opportunity to get the word out for the app
+and to make a mark on a large platform like Peerlist.
+5 minutes of your time could make a real difference!
+The voting closes on Sunday.
 
+Please leave a review, so we can get Music Presence to the **very top**!
 As a thank you,
 you get a **special role** on the
 [**Discord server**](https://discord.gg/7rc8dWD4ug)
-and you enter the **giveaway** below!
+and you can enter the small **giveaway** below!
 
 &nbsp;
 
@@ -26,7 +30,7 @@ and you enter the **giveaway** below!
 6. **Upvote** by clicking the black "Upvote" button
 7. **Bookmark** by clicking the flag icon in the top menu, next to the share button
 8. **Comment** your experience with Music Presence under "How does this project inspire you?" - You can also upvote a comment of another user, if you resonate with what they wrote, but writing your own comment helps the most!
-9. Read below for information on the giveaway and Discord role!
+9. Scroll down for information on the giveaway and Discord role!
 
 &nbsp;
 
