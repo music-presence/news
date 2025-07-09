@@ -55,7 +55,7 @@ To enter the giveaway:
    and DM me **@ungive**. You can click on my name in the **#rules** channel to open a DM.
    Tell me your Peerlist username and that you want to enter the giveaway.
    That's it!
-3. You will get the green animated **@Contributor** Discord role and
+3. You will get the green animated **@Superpeer** Discord role and
    I will announce the winner on the Discord server on Monday, 14. July 2025 at 8 PM CEST
 
 &nbsp;
