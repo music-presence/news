@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/meta.schema.json",
-  "published": false,
+  "published": true,
   "popup": true,
   "endTime": "2025-07-13T23:59:59.000Z"
 }
