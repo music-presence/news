@@ -20,6 +20,12 @@ and you can enter the small **giveaway** below!
 
 &nbsp;
 
+*If you keep seeing this popup after waking up your device from sleep,
+it's a [bug](https://github.com/ungive/discord-music-presence/issues/329) and it will be fixed soon! This popup will only be active until Sunday.
+Also, "[Listening to Artist](https://github.com/ungive/discord-music-presence/issues/229)" will be here in the next few days!*
+
+&nbsp;
+
 ## How can you help?
 
 1. Visit **[https://peerlist.io/ungive/signup](https://peerlist.io/ungive/signup)**
