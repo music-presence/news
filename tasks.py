@@ -924,10 +924,16 @@ def get_command_output(*args):
         stdout=subprocess.PIPE,
         stderr=sys.stderr,
         text=True,
-    ).stdout
+    ).stdout.strip()
 
 
 def change_published_state(c: Context, id: NewsId, target_state: bool):
+    if int(get_command_output("git", "rev-list", "--count", "@{u}..")) > 0:
+        print(
+            f"Error: Cannot change published state with unpushed commits",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if len(get_command_output("git", "diff", "--cached")) > 0:
         print(
             f"Error: Cannot change published state with other staged changes",
