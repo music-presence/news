@@ -927,10 +927,12 @@ def get_command_output(*args):
     ).stdout
 
 
-@task
-def publish(c: Context, id: NewsId):
+def change_published_state(c: Context, id: NewsId, target_state: bool):
     if len(get_command_output("git", "diff", "--cached")) > 0:
-        print(f"Error: Cannot publish with other staged changes", file=sys.stderr)
+        print(
+            f"Error: Cannot change published state with other staged changes",
+            file=sys.stderr,
+        )
         sys.exit(1)
     news_path = os.path.join(NEWS_LOCATION, str(id))
     if not os.path.exists(news_path):
@@ -942,16 +944,27 @@ def publish(c: Context, id: NewsId):
         sys.exit(1)
     with open(meta_path, "rt", encoding="utf-8") as f:
         meta = json.loads(f.read())
-    if meta["published"]:
-        print(f"News with ID {id} is already published")
+    if meta["published"] == target_state:
+        state_description = "published" if meta["published"] else "unpublished"
+        print(f"News with ID {id} is already {state_description}")
         sys.exit(0)
-    meta["published"] = True
+    meta["published"] = target_state
     with open(meta_path, "wt", encoding="utf-8") as f:
         f.write(json.dumps(meta, indent=2) + "\n")
     run_command("git", "add", meta_path)
     run_command("git", "add", news_path)
     run_command("git", "commit", "-m", f"Publish news with ID {id}")
     run_command("git", "push", "origin", "main")
+
+
+@task
+def publish(c: Context, id: NewsId):
+    change_published_state(c, id, True)
+
+
+@task
+def unpublish(c: Context, id: NewsId):
+    change_published_state(c, id, False)
 
 
 @task
