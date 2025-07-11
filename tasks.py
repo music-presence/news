@@ -959,7 +959,8 @@ def change_published_state(c: Context, id: NewsId, target_state: bool):
         f.write(json.dumps(meta, indent=2) + "\n")
     run_command("git", "add", meta_path)
     run_command("git", "add", news_path)
-    run_command("git", "commit", "-m", f"Publish news with ID {id}")
+    commit_state_description = "Publish" if meta["published"] else "Unpublish"
+    run_command("git", "commit", "-m", f"{commit_state_description} news with ID {id}")
     run_command("git", "push", "origin", "main")
 
 
