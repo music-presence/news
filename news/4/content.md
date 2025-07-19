@@ -75,13 +75,17 @@ I can't wait to work on the next features! ❤️
 [Donate](https://musicpresence.app/donate?utm_source=app&utm_medium=news)
 
 <!-- urgent -->
-Please take a moment to read this message,
-especially the part after "**Why fund this project?**"
-where I talk about my plans for the future of Music Presence
-and where I am currently at in life.
+Please take a moment to read this message
+from the creator of Music Presence.
+The future of the app depends on it.
 
-If you like Music Presence, you might like the vision I have for it
-and where I intend to take the project.
+---
 
-You can also visit my website:
-[**musicpresence.app**](https://musicpresence.app)
+If you like Music Presence,
+you might also like the vision for its future
+and where the project is heading.
+Your donation could make a real difference!
+
+Questions? Contact me: [**contact@musicpresence.app**](mailto:contact@musicpresence.app)
+
+Make a donation: [**musicpresence.app/donate**](https://musicpresence.app/donate?utm_source=app&utm_medium=news&utm_content=cancel-dialog)
