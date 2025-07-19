@@ -283,7 +283,15 @@ class News:
         return result
 
 
+def is_language_country_code(s):
+    pattern = r"^[a-z]{2}_[A-Z]{2}$"
+    return bool(re.match(pattern, s))
+
+
 def to_camel_case(snake_str):
+    # Leave country codes with underscores (snake case) intact.
+    if is_language_country_code(snake_str):
+        return snake_str
     components = snake_str.split("_")
     return components[0] + "".join(x.title() for x in components[1:])
 
@@ -631,6 +639,14 @@ def url_for_dist_file(relative_path: str) -> str:
     return f"{URL_PROTOCOL}://{URL_DOMAIN}/{EXPORT_ROOT_DIR}/{DIST_STATIC_DIR}/{relative_path}"
 
 
+def fix_language_codes_for_qt(d: dict[str, Any]):
+    res = {}
+    for key, value in d.items():
+        new_key = key.replace("-", "_")
+        res[new_key] = value
+    return res
+
+
 def enumerate_exported_news():
     for news in enumerate_news():
         new_banners = []
@@ -643,6 +659,17 @@ def enumerate_exported_news():
             banner_url = url_for_dist_file(relative_path)
             new_banners.append((language, banner_url))
         news.banner = dict(new_banners)
+        # Fix language codes to be "xy_AB" instead of "xy-AB".
+        # This is how Qt handles language codes with a country code.
+        if news.title is not None:
+            news.title = fix_language_codes_for_qt(news.title)
+        news.short_title = fix_language_codes_for_qt(news.short_title)
+        news.banner = fix_language_codes_for_qt(news.banner)
+        news.content = fix_language_codes_for_qt(news.content)
+        if news.urgent is not None:
+            news.urgent = fix_language_codes_for_qt(news.urgent)
+        for i in range(len(news.buttons)):
+            news.buttons[i].label = fix_language_codes_for_qt(news.buttons[i].label)
         yield news
 
 
@@ -854,6 +881,10 @@ def translations(c: Context):
         translations_directory = os.path.join(os.path.join(directory, TRANSLATIONS_DIR))
         pathlib.Path(translations_directory).mkdir(parents=True, exist_ok=True)
         for language in get_languages(meta):
+            if "_" in language:
+                # Skip duplicates that have an underscore.
+                # Those are only for validation.
+                continue
             language_filepath = os.path.join(translations_directory, f"{language}.json")
             to_write = json.dumps(dict())
             if language == DEFAULT_LANGUAGE_CODE:

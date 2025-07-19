@@ -23,6 +23,7 @@
     "nl",
     "pl",
     "pt-PT",
+    "pt_PT",
     "ro",
     "ru",
     "sk",
@@ -32,6 +33,8 @@
     "uk",
     "vi",
     "zh-CN",
-    "zh-TW"
+    "zh_CN",
+    "zh-TW",
+    "zh_TW"
   ]
 }
