@@ -65,9 +65,6 @@ I can't wait to work on the next features! ❤️
 <!-- button aside -->
 [Contact me](mailto:contact@musicpresence.app)
 
-<!-- button aside -->
-[Translate](https://github-com.translate.goog/music-presence/news/blob/write/news/4/content.md?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=wapp)
-
 <!-- button -->
 [Visit the website](https://musicpresence.app?utm_source=app&utm_medium=news)
 
