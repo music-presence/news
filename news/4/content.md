@@ -46,7 +46,7 @@ even a very small donation can have a great impact.
 - Visit my [website](https://musicpresence.app?utm_source=app&utm_medium=news)
 and read the [FAQ](https://musicpresence.app/donate?utm_source=app&utm_medium=news#faq)
 to find more answers to frequently asked questions.
-- Subscribe to [this GitHub issue](https://github.com/ungive/discord-music-presence/issues/344)
+- Subscribe to [this GitHub issue](https://github.com/ungive/discord-music-presence/issues/355)
 to be in the loop on all updates regarding the donation goal
 and the project going forward.
 I will inform you if the goal has been reached on the 10th of August.
