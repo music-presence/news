@@ -1,5 +1,5 @@
 {
   "$schema": "../../schemas/meta.schema.json",
-  "published": true,
+  "published": false,
   "popup": false
 }
